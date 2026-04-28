@@ -1,0 +1,31 @@
+﻿---
+description: AI code modification boundaries and execution quality gates
+alwaysApply: true
+---
+
+# 07 AI Working Mode Rule / AI 工作模式规则
+
+## Purpose / 目的
+- Define what AI can change, cannot change, and must verify.
+- 定义 AI 可改、禁改与必验证内容。
+
+## Inputs / 输入
+- User request / 用户请求
+- Applicable rules and skills / 适用规则与技能
+
+## Steps / 步骤
+1. Classify request as docs-only, implementation, or debugging before editing. / 编辑前先判断任务类型：文档/实现/排障。
+2. Refuse actions that violate current stage boundaries (framework init, business code). / 拒绝违反当前阶段边界的动作（框架初始化、业务编码）。
+3. Modify only files directly related to request; no opportunistic refactor. / 仅修改请求相关文件，禁止机会式重构。
+4. Preserve existing API envelope, security baseline, and naming conventions unless user explicitly approves change. / 未经用户明确批准，保持 API 封装、安全基线和命名规范不变。
+5. In final report, list changed files, validation results, and unresolved risks. / 最终汇报必须包含变更文件、验证结果和未解决风险。
+
+## Output / 产出
+- Controlled AI edits with explicit governance evidence.
+- 具备治理证据的可控 AI 变更流程。
+
+## Checklist / 检查清单
+- [ ] Stage boundary checks are passed. / 阶段边界检查通过。
+- [ ] File scope is controlled. / 文件改动范围可控。
+- [ ] Invariants are preserved. / 核心不变量已保持。
+- [ ] Final verification is reported. / 最终验证已汇报。
