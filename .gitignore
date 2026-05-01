@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+env/
+services/api/.venv/
+
+# Environment files
+.env
+
+# Django
+db.sqlite3
+*.sqlite3
+
+# Node
+node_modules/
+.next/
+dist/
+out/
