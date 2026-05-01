@@ -30,7 +30,11 @@ export default function HomePage() {
 
       <section>
         <SectionTitle title="推荐小说" actionText="更多" />
-        <div className="grid gap-3">{recommends.map((item) => <NovelCard key={item.id} novel={item} />)}</div>
+        <div className="grid gap-3">
+          {recommends.map((item, index) => (
+            <NovelCard key={item.id} novel={item} priorityCover={index === 0} />
+          ))}
+        </div>
       </section>
 
       <section className="rounded-xl bg-white p-4 shadow-sm">
@@ -42,7 +46,11 @@ export default function HomePage() {
 
       <section>
         <SectionTitle title="最近更新" />
-        <div className="grid gap-3">{updates.map((item) => <NovelCard key={item.id} novel={item} />)}</div>
+        <div className="grid gap-3">
+          {updates.map((item) => (
+            <NovelCard key={item.id} novel={item} />
+          ))}
+        </div>
       </section>
     </div>
   );

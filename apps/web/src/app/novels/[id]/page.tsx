@@ -22,7 +22,14 @@ export default async function NovelDetailPage({ params }: { params: Promise<{ id
     <div className="space-y-4">
       <section className="rounded-xl bg-white p-4 shadow-sm">
         <div className="flex gap-3">
-          <Image src={novel.cover} alt={novel.title} width={96} height={144} className="h-36 w-24 rounded-lg object-cover" />
+          <Image
+            src={novel.cover}
+            alt={novel.title}
+            width={96}
+            height={144}
+            priority
+            className="h-36 w-24 rounded-lg object-cover"
+          />
           <div className="min-w-0 flex-1">
             <h1 className="text-lg font-semibold">{novel.title}</h1>
             <p className="mt-1 text-sm text-zinc-600">作者：{novel.author}</p>
@@ -46,15 +53,19 @@ export default async function NovelDetailPage({ params }: { params: Promise<{ id
 
       <section className="rounded-xl bg-white p-4 shadow-sm">
         <h2 className="mb-3 text-base font-semibold">章节列表</h2>
-        <ul className="space-y-2">
-          {chapters.map((chapter) => (
-            <li key={chapter.id}>
-              <Link href={`/novels/${novel.id}/chapters/${chapter.id}`} className="block rounded-lg border border-zinc-200 px-3 py-2 text-sm">
-                {chapter.title}
-              </Link>
-            </li>
-          ))}
-        </ul>
+        {chapters.length === 0 ? (
+          <p className="rounded-lg border border-dashed border-zinc-300 px-3 py-4 text-sm text-zinc-500">暂无可阅读章节，稍后再来看看。</p>
+        ) : (
+          <ul className="space-y-2">
+            {chapters.map((chapter) => (
+              <li key={chapter.id}>
+                <Link href={`/novels/${novel.id}/chapters/${chapter.id}`} className="block rounded-lg border border-zinc-200 px-3 py-2 text-sm">
+                  {chapter.title}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     </div>
   );
