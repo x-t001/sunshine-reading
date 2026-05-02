@@ -24,9 +24,10 @@ export function SiteHeader() {
         <nav className="hidden gap-4 text-sm text-zinc-600 md:flex">
           <Link href="/novels">小说</Link>
           <Link href="/categories">分类</Link>
-          <Link href="/rankings">排行榜</Link>
+          <Link href="/rankings">榜单</Link>
           <Link href="/search">搜索</Link>
           <Link href="/bookshelf">书架</Link>
+          <Link href="/history">历史</Link>
         </nav>
         <div className="ml-auto flex shrink-0 items-center gap-2 text-sm">
           {user ? (
@@ -49,7 +50,7 @@ export function SiteHeader() {
               </Link>
             </>
           )}
-          {loading && !user ? <span className="hidden text-xs text-zinc-400 sm:inline">检查登录态</span> : null}
+          {loading && !user ? <span className="hidden text-xs text-zinc-400 sm:inline">检查登录...</span> : null}
         </div>
       </div>
       <div className="mx-auto hidden max-w-5xl gap-2 overflow-x-auto px-4 py-2 md:flex">

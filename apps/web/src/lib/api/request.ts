@@ -13,6 +13,10 @@ export class ApiRequestError extends Error {
   }
 }
 
+export type ApiRequestInit = RequestInit & {
+  auth?: boolean;
+};
+
 export function getApiBaseUrl(): string {
   return (process.env.NEXT_PUBLIC_API_BASE_URL || DEFAULT_API_BASE_URL).replace(/\/+$/, "");
 }
@@ -38,16 +42,17 @@ export function getApiErrorMessage(error: unknown): string {
   return "请求失败，请稍后重试。";
 }
 
-export async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const headers = new Headers(init.headers);
+export async function apiRequest<T>(path: string, init: ApiRequestInit = {}): Promise<T> {
+  const { auth = true, ...requestInit } = init;
+  const headers = new Headers(requestInit.headers);
   if (!headers.has("Accept")) {
     headers.set("Accept", "application/json");
   }
-  if (init.body && !headers.has("Content-Type")) {
+  if (requestInit.body && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
   const accessToken = getAccessToken();
-  if (accessToken && !headers.has("Authorization")) {
+  if (auth && accessToken && !headers.has("Authorization")) {
     headers.set("Authorization", `Bearer ${accessToken}`);
   }
 
@@ -57,9 +62,9 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
   let response: Response;
   try {
     response = await fetch(url, {
-      ...init,
+      ...requestInit,
       headers,
-      cache: init.cache ?? "no-store",
+      cache: requestInit.cache ?? "no-store",
     });
   } catch (error) {
     throw new ApiRequestError(`无法连接后端 API：${getApiErrorMessage(error)}`);

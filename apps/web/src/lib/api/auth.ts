@@ -6,13 +6,16 @@ import type { UserBasic } from "@/types/user";
 export async function register(payload: RegisterPayload): Promise<UserBasic> {
   return apiRequest<UserBasic>("/auth/register/", {
     method: "POST",
+    auth: false,
     body: JSON.stringify(payload),
   });
 }
 
 export async function login(payload: LoginPayload): Promise<LoginResponse> {
+  clearTokens();
   const result = await apiRequest<LoginResponse>("/auth/login/", {
     method: "POST",
+    auth: false,
     body: JSON.stringify(payload),
   });
   setTokens(result.access, result.refresh);
@@ -22,6 +25,7 @@ export async function login(payload: LoginPayload): Promise<LoginResponse> {
 export async function refreshToken(refresh: string): Promise<RefreshTokenResponse> {
   const result = await apiRequest<RefreshTokenResponse>("/auth/refresh/", {
     method: "POST",
+    auth: false,
     body: JSON.stringify({ refresh }),
   });
   setAccessToken(result.access);
