@@ -80,6 +80,7 @@ class Novel(TimeStampedModel):
         default=Decimal("0.00"),
         db_index=True,
     )
+    rating_count = models.PositiveIntegerField(default=0, db_index=True)
     latest_chapter_title = models.CharField(max_length=255, blank=True)
     latest_chapter_updated_at = models.DateTimeField(null=True, blank=True, db_index=True)
     is_featured = models.BooleanField(default=False, db_index=True)
@@ -96,3 +97,45 @@ class Novel(TimeStampedModel):
 
     def __str__(self):
         return self.title
+
+
+class NovelRating(TimeStampedModel):
+    class Score(models.IntegerChoices):
+        ONE = 1, "1"
+        TWO = 2, "2"
+        THREE = 3, "3"
+        FOUR = 4, "4"
+        FIVE = 5, "5"
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        related_name="novel_ratings",
+        on_delete=models.CASCADE,
+    )
+    novel = models.ForeignKey(
+        Novel,
+        related_name="ratings",
+        on_delete=models.CASCADE,
+    )
+    score = models.PositiveSmallIntegerField(choices=Score.choices, db_index=True)
+    comment = models.CharField(max_length=500, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "novel"],
+                name="unique_novel_rating_user_novel",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(score__gte=1, score__lte=5),
+                name="novel_rating_score_between_1_and_5",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["novel", "score"]),
+            models.Index(fields=["user", "created_at"]),
+            models.Index(fields=["novel", "created_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.user} rated {self.novel}: {self.score}"

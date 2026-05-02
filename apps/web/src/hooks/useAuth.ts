@@ -21,7 +21,7 @@ function getMessage(error: unknown): string {
 
 export function useAuth(): UseAuthState {
   const [user, setUser] = useState<CurrentUser | null>(null);
-  const [loading, setLoading] = useState(() => Boolean(getAccessToken()));
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
@@ -47,33 +47,40 @@ export function useAuth(): UseAuthState {
   }, []);
 
   useEffect(() => {
-    const access = getAccessToken();
-    if (!access) {
-      return;
-    }
-
     let active = true;
-    void getCurrentUser()
-      .then((currentUser) => {
-        if (!active) {
-          return;
-        }
-        setUser(currentUser);
-        setError(null);
-      })
-      .catch((loadError) => {
-        if (!active) {
-          return;
-        }
+
+    void (async () => {
+      await Promise.resolve();
+      if (!active) {
+        return;
+      }
+
+      const access = getAccessToken();
+      if (!access) {
         setUser(null);
-        setError(getMessage(loadError));
-      })
-      .finally(() => {
-        if (!active) {
-          return;
-        }
+        setError(null);
         setLoading(false);
-      });
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const currentUser = await getCurrentUser();
+        if (active) {
+          setUser(currentUser);
+          setError(null);
+        }
+      } catch (loadError) {
+        if (active) {
+          setUser(null);
+          setError(getMessage(loadError));
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    })();
 
     return () => {
       active = false;

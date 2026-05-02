@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { CommentList } from "@/components/CommentList";
 import { getNovelChapters } from "@/lib/api/chapters";
 import { addToBookshelf, checkInBookshelf } from "@/lib/api/bookshelf";
 import { getNovelDetail } from "@/lib/api/novels";
@@ -223,6 +224,8 @@ export default function NovelDetailPage() {
           </ul>
         )}
       </section>
+
+      <CommentList novelId={novel.id} />
     </div>
   );
 }

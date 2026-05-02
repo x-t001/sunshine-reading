@@ -1,6 +1,6 @@
 from django.db.models import Q
 
-from .models import Category, Novel
+from .models import Category, Novel, NovelRating
 
 
 def get_enabled_categories():
@@ -53,3 +53,10 @@ def get_public_novel_by_id(novel_id):
         .exclude(status=Novel.Status.REMOVED)
         .first()
     )
+
+
+def get_rating_for_user(novel_id, user):
+    if not user or not user.is_authenticated:
+        return None
+
+    return NovelRating.objects.filter(novel_id=novel_id, user=user).first()

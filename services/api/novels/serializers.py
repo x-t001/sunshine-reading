@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Category, Novel
+from .models import Category, Novel, NovelRating
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -43,6 +43,7 @@ class NovelListSerializer(serializers.ModelSerializer):
             "collect_count",
             "comment_count",
             "rating_score",
+            "rating_count",
             "latest_chapter_title",
             "latest_chapter_updated_at",
             "is_featured",
@@ -54,3 +55,21 @@ class NovelListSerializer(serializers.ModelSerializer):
 class NovelDetailSerializer(NovelListSerializer):
     class Meta(NovelListSerializer.Meta):
         fields = NovelListSerializer.Meta.fields + ("audit_status",)
+
+
+class NovelRatingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NovelRating
+        fields = ("score", "comment")
+
+
+class NovelRatingInputSerializer(serializers.Serializer):
+    score = serializers.IntegerField(min_value=1, max_value=5)
+    comment = serializers.CharField(max_length=500, required=False, allow_blank=True)
+
+
+class NovelRatingSummarySerializer(serializers.Serializer):
+    novel_id = serializers.IntegerField()
+    rating_score = serializers.FloatField()
+    rating_count = serializers.IntegerField()
+    my_rating = NovelRatingSerializer(allow_null=True)
