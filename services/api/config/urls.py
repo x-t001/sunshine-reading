@@ -7,4 +7,5 @@ urlpatterns = [
     path("api/", include("novels.urls")),
     path("api/", include("chapters.urls")),
     path("api/", include("rankings.urls")),
+    path("api/", include("users.urls")),
 ]
