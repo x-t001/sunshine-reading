@@ -1,4 +1,5 @@
 import type { ApiEnvelope } from "@/types/api";
+import { getAccessToken } from "@/lib/auth/token";
 
 const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000/api";
 
@@ -41,6 +42,13 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
   const headers = new Headers(init.headers);
   if (!headers.has("Accept")) {
     headers.set("Accept", "application/json");
+  }
+  if (init.body && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+  const accessToken = getAccessToken();
+  if (accessToken && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${accessToken}`);
   }
 
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
