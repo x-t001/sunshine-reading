@@ -6,12 +6,16 @@ import { useEffect, useRef, useState } from "react";
 import { ReadingToolbar } from "@/components/ReadingToolbar";
 import { getChapterDetail } from "@/lib/api/chapters";
 import { reportReadingHistory } from "@/lib/api/reading-history";
-import { getApiErrorMessage } from "@/lib/api/request";
-import { getAccessToken } from "@/lib/auth/token";
+import { ApiRequestError, getApiErrorMessage } from "@/lib/api/request";
+import { clearTokens, getAccessToken } from "@/lib/auth/token";
 import type { ChapterDetail } from "@/types/chapter";
 
 function readRouteParam(value: string | string[] | undefined): string {
   return Array.isArray(value) ? value[0] : value || "";
+}
+
+function isUnauthorizedError(error: unknown): boolean {
+  return error instanceof ApiRequestError && error.status === 401;
 }
 
 export default function ReadingPage() {
@@ -78,6 +82,10 @@ export default function ReadingPage() {
       chapter_id: Number(chapterId),
       reading_position: 0,
     }).catch((reportError) => {
+      if (isUnauthorizedError(reportError)) {
+        clearTokens();
+        return;
+      }
       setSyncError(getApiErrorMessage(reportError));
     });
   }, [chapter, chapterId, id]);

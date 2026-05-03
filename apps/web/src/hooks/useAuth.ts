@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { logout as logoutApi } from "@/lib/api/auth";
 import { getCurrentUser } from "@/lib/api/users";
-import { getAccessToken } from "@/lib/auth/token";
+import { ApiRequestError } from "@/lib/api/request";
+import { clearTokens, getAccessToken } from "@/lib/auth/token";
 import type { CurrentUser } from "@/types/user";
 
 type UseAuthState = {
@@ -39,6 +40,9 @@ export function useAuth(): UseAuthState {
       setUser(currentUser);
       setError(null);
     } catch (loadError) {
+      if (loadError instanceof ApiRequestError && loadError.status === 401) {
+        clearTokens();
+      }
       setUser(null);
       setError(getMessage(loadError));
     } finally {
@@ -72,6 +76,9 @@ export function useAuth(): UseAuthState {
         }
       } catch (loadError) {
         if (active) {
+          if (loadError instanceof ApiRequestError && loadError.status === 401) {
+            clearTokens();
+          }
           setUser(null);
           setError(getMessage(loadError));
         }

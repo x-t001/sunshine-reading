@@ -5,11 +5,12 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { CommentList } from "@/components/CommentList";
+import { RatingPanel } from "@/components/RatingPanel";
 import { getNovelChapters } from "@/lib/api/chapters";
 import { addToBookshelf, checkInBookshelf } from "@/lib/api/bookshelf";
 import { getNovelDetail } from "@/lib/api/novels";
-import { getApiErrorMessage } from "@/lib/api/request";
-import { getAccessToken } from "@/lib/auth/token";
+import { ApiRequestError, getApiErrorMessage } from "@/lib/api/request";
+import { clearTokens, getAccessToken } from "@/lib/auth/token";
 import { formatDateLabel, formatWordCount } from "@/lib/utils/format";
 import type { ChapterCatalogItem } from "@/types/chapter";
 import type { NovelDetail } from "@/types/novel";
@@ -23,6 +24,10 @@ function getCoverUrl(id: number, cover: string): string {
 
 function readRouteParam(value: string | string[] | undefined): string {
   return Array.isArray(value) ? value[0] : value || "";
+}
+
+function isUnauthorizedError(error: unknown): boolean {
+  return error instanceof ApiRequestError && error.status === 401;
 }
 
 export default function NovelDetailPage() {
@@ -94,6 +99,11 @@ export default function NovelDetailPage() {
         }
       } catch (checkError) {
         if (active) {
+          if (isUnauthorizedError(checkError)) {
+            clearTokens();
+            setInBookshelf(null);
+            return;
+          }
           setBookshelfError(getApiErrorMessage(checkError));
           setInBookshelf(null);
         }
@@ -126,6 +136,12 @@ export default function NovelDetailPage() {
       await addToBookshelf(novel.id);
       setInBookshelf(true);
     } catch (addError) {
+      if (isUnauthorizedError(addError)) {
+        clearTokens();
+        setInBookshelf(null);
+        router.push("/login");
+        return;
+      }
       setBookshelfError(getApiErrorMessage(addError));
     } finally {
       setAdding(false);
@@ -201,6 +217,8 @@ export default function NovelDetailPage() {
         </div>
         {bookshelfError ? <p className="mt-3 text-sm text-red-600">{bookshelfError}</p> : null}
       </section>
+
+      <RatingPanel novelId={novel.id} />
 
       <section className="rounded-xl bg-white p-4 shadow-sm">
         <h2 className="mb-3 text-base font-semibold">章节列表</h2>

@@ -12,9 +12,13 @@ export type GetNovelsParams = {
 };
 
 export function getNovels(params: GetNovelsParams = {}): Promise<PaginatedResponse<NovelListItem>> {
-  return apiRequest<PaginatedResponse<NovelListItem>>(`/novels/${buildQueryString(params)}`);
+  return apiRequest<PaginatedResponse<NovelListItem>>(`/novels/${buildQueryString(params)}`, {
+    auth: false,
+  });
 }
 
 export function getNovelDetail(id: number | string): Promise<NovelDetail> {
-  return apiRequest<NovelDetail>(`/novels/${id}/`);
+  return apiRequest<NovelDetail>(`/novels/${id}/`, {
+    auth: false,
+  });
 }
