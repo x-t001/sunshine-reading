@@ -1,7 +1,8 @@
 import type { ApiEnvelope } from "@/types/api";
-import { getAccessToken } from "@/lib/auth/token";
+import { clearTokens, getAccessToken } from "@/lib/auth/token";
 
 const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000/api";
+const AUTH_EXPIRED_MESSAGE = "登录已过期，请重新登录。";
 
 export class ApiRequestError extends Error {
   constructor(
@@ -75,6 +76,11 @@ export async function apiRequest<T>(path: string, init: ApiRequestInit = {}): Pr
     payload = (await response.json()) as ApiEnvelope<T>;
   } catch {
     throw new ApiRequestError(`后端返回了无法解析的响应。HTTP ${response.status}`, response.status);
+  }
+
+  if (auth && response.status === 401) {
+    clearTokens();
+    throw new ApiRequestError(AUTH_EXPIRED_MESSAGE, response.status);
   }
 
   if (!response.ok) {

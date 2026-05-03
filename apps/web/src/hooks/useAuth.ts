@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { logout as logoutApi } from "@/lib/api/auth";
 import { getCurrentUser } from "@/lib/api/users";
 import { ApiRequestError } from "@/lib/api/request";
-import { clearTokens, getAccessToken } from "@/lib/auth/token";
+import { AUTH_TOKEN_CHANGED_EVENT, AUTH_TOKEN_STORAGE_KEYS, clearTokens, getAccessToken } from "@/lib/auth/token";
 import type { CurrentUser } from "@/types/user";
 
 type UseAuthState = {
@@ -93,6 +93,26 @@ export function useAuth(): UseAuthState {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    function handleTokenChanged() {
+      void reload();
+    }
+
+    function handleStorageChanged(event: StorageEvent) {
+      if (event.key && !AUTH_TOKEN_STORAGE_KEYS.includes(event.key as (typeof AUTH_TOKEN_STORAGE_KEYS)[number])) {
+        return;
+      }
+      void reload();
+    }
+
+    window.addEventListener(AUTH_TOKEN_CHANGED_EVENT, handleTokenChanged);
+    window.addEventListener("storage", handleStorageChanged);
+    return () => {
+      window.removeEventListener(AUTH_TOKEN_CHANGED_EVENT, handleTokenChanged);
+      window.removeEventListener("storage", handleStorageChanged);
+    };
+  }, [reload]);
 
   const logout = useCallback(() => {
     logoutApi();
