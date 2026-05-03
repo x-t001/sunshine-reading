@@ -1,16 +1,33 @@
 from rest_framework.exceptions import NotFound
 from rest_framework.views import APIView
+from users.permissions import IsAuthorOrAdmin
 
 from common.pagination import PublicPageNumberPagination
 from common.response import success_response
-from novels.selectors import get_public_novel_by_id
+from novels.selectors import get_author_novel_by_id, get_public_novel_by_id
 
 from .selectors import (
     get_adjacent_chapter_ids,
+    get_author_chapter_by_id,
+    get_author_chapters_for_novel,
     get_public_chapter_by_id,
     get_public_chapters_for_novel,
 )
-from .serializers import ChapterCatalogSerializer, ChapterDetailSerializer
+from .serializers import (
+    AuthorChapterCreateSerializer,
+    AuthorChapterDetailSerializer,
+    AuthorChapterListSerializer,
+    AuthorChapterSubmitSerializer,
+    AuthorChapterUpdateSerializer,
+    ChapterCatalogSerializer,
+    ChapterDetailSerializer,
+)
+from .services import (
+    create_author_chapter,
+    delete_author_chapter,
+    submit_chapter_review,
+    update_author_chapter,
+)
 
 
 class NovelChapterListView(APIView):
@@ -36,3 +53,66 @@ class ChapterDetailView(APIView):
         chapter.next_chapter_id = next_id
         serializer = ChapterDetailSerializer(chapter)
         return success_response(serializer.data)
+
+
+class AuthorNovelChapterListCreateView(APIView):
+    permission_classes = [IsAuthorOrAdmin]
+
+    def get_novel(self, request, novel_id):
+        novel = get_author_novel_by_id(request.user, novel_id)
+        if novel is None:
+            raise NotFound("Novel not found.")
+        return novel
+
+    def get(self, request, novel_id):
+        self.get_novel(request, novel_id)
+        paginator = PublicPageNumberPagination()
+        queryset = get_author_chapters_for_novel(request.user, novel_id)
+        page = paginator.paginate_queryset(queryset, request, view=self)
+        serializer = AuthorChapterListSerializer(page, many=True)
+        return success_response(paginator.get_paginated_data(serializer.data))
+
+    def post(self, request, novel_id):
+        novel = self.get_novel(request, novel_id)
+        serializer = AuthorChapterCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        chapter = create_author_chapter(novel, serializer.validated_data)
+        return success_response(AuthorChapterDetailSerializer(chapter).data)
+
+
+class AuthorChapterDetailView(APIView):
+    permission_classes = [IsAuthorOrAdmin]
+
+    def get_object(self, request, id):
+        chapter = get_author_chapter_by_id(request.user, id)
+        if chapter is None:
+            raise NotFound("Chapter not found.")
+        return chapter
+
+    def get(self, request, id):
+        chapter = self.get_object(request, id)
+        return success_response(AuthorChapterDetailSerializer(chapter).data)
+
+    def patch(self, request, id):
+        chapter = self.get_object(request, id)
+        serializer = AuthorChapterUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        chapter = update_author_chapter(chapter, serializer.validated_data)
+        return success_response(AuthorChapterDetailSerializer(chapter).data)
+
+    def delete(self, request, id):
+        chapter = self.get_object(request, id)
+        delete_author_chapter(chapter)
+        return success_response({})
+
+
+class AuthorChapterSubmitView(APIView):
+    permission_classes = [IsAuthorOrAdmin]
+
+    def post(self, request, id):
+        chapter = get_author_chapter_by_id(request.user, id)
+        if chapter is None:
+            raise NotFound("Chapter not found.")
+
+        chapter = submit_chapter_review(chapter)
+        return success_response(AuthorChapterSubmitSerializer(chapter).data)

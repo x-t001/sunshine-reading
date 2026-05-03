@@ -65,3 +65,59 @@ def recalculate_novel_rating(novel_id):
         rating_count=count,
     )
     return Novel.objects.get(id=novel_id)
+
+
+@transaction.atomic
+def create_author_novel(user, data):
+    return Novel.objects.create(
+        author=user,
+        title=data["title"],
+        category=data["category"],
+        cover=data.get("cover", ""),
+        description=data.get("description", ""),
+        status=data.get("status", Novel.Status.SERIALIZING),
+        audit_status=Novel.AuditStatus.DRAFT,
+    )
+
+
+@transaction.atomic
+def update_author_novel(novel, data):
+    review_sensitive_fields = {"title", "category", "cover", "description"}
+    changed_review_sensitive_field = False
+
+    for field in ("title", "category", "cover", "description", "status"):
+        if field not in data:
+            continue
+
+        new_value = data[field]
+        if getattr(novel, field) != new_value and field in review_sensitive_fields:
+            changed_review_sensitive_field = True
+        setattr(novel, field, new_value)
+
+    if novel.audit_status == Novel.AuditStatus.APPROVED and changed_review_sensitive_field:
+        novel.audit_status = Novel.AuditStatus.PENDING
+
+    novel.save(update_fields=["title", "category", "cover", "description", "status", "audit_status", "updated_at"])
+    return novel
+
+
+@transaction.atomic
+def submit_novel_review(novel):
+    missing_fields = []
+    if not novel.title:
+        missing_fields.append("title")
+    if not novel.description:
+        missing_fields.append("description")
+    if not novel.category_id:
+        missing_fields.append("category_id")
+    if missing_fields:
+        raise ValidationError({"fields": [f"Missing required fields: {', '.join(missing_fields)}."]})
+
+    if novel.audit_status == Novel.AuditStatus.PENDING:
+        raise ValidationError({"audit_status": ["Novel is already pending review."]})
+    if novel.audit_status == Novel.AuditStatus.APPROVED:
+        raise ValidationError({"audit_status": ["Novel is already approved."]})
+
+    novel.audit_status = Novel.AuditStatus.PENDING
+    novel.save(update_fields=["audit_status", "updated_at"])
+    return novel

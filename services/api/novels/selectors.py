@@ -1,4 +1,5 @@
-from django.db.models import Q
+from django.db.models import Count, Q
+from users.permissions import is_admin_user
 
 from .models import Category, Novel, NovelRating
 
@@ -60,3 +61,35 @@ def get_rating_for_user(novel_id, user):
         return None
 
     return NovelRating.objects.filter(novel_id=novel_id, user=user).first()
+
+
+def get_author_novels(user, params):
+    queryset = Novel.objects.select_related("author", "category")
+    if not is_admin_user(user):
+        queryset = queryset.filter(author=user)
+
+    keyword = params.get("keyword")
+    if keyword:
+        queryset = queryset.filter(Q(title__icontains=keyword) | Q(description__icontains=keyword))
+
+    status = params.get("status")
+    if status:
+        queryset = queryset.filter(status=status)
+
+    audit_status = params.get("audit_status")
+    if audit_status:
+        queryset = queryset.filter(audit_status=audit_status)
+
+    return queryset.order_by("-updated_at", "-created_at")
+
+
+def get_author_novel_by_id(user, novel_id):
+    queryset = (
+        Novel.objects.select_related("author", "category")
+        .annotate(chapter_count=Count("chapters", distinct=True))
+        .filter(id=novel_id)
+    )
+    if not is_admin_user(user):
+        queryset = queryset.filter(author=user)
+    return queryset.first()
+

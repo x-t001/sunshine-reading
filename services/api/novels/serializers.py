@@ -57,6 +57,79 @@ class NovelDetailSerializer(NovelListSerializer):
         fields = NovelListSerializer.Meta.fields + ("audit_status",)
 
 
+class AuthorNovelListSerializer(serializers.ModelSerializer):
+    category = NovelCategorySerializer(read_only=True)
+    rating_score = serializers.DecimalField(max_digits=4, decimal_places=2)
+
+    class Meta:
+        model = Novel
+        fields = (
+            "id",
+            "title",
+            "cover",
+            "category",
+            "status",
+            "audit_status",
+            "word_count",
+            "view_count",
+            "collect_count",
+            "comment_count",
+            "rating_score",
+            "rating_count",
+            "latest_chapter_title",
+            "latest_chapter_updated_at",
+            "created_at",
+            "updated_at",
+        )
+
+
+class AuthorNovelDetailSerializer(AuthorNovelListSerializer):
+    author = NovelAuthorSerializer(read_only=True)
+    chapter_count = serializers.SerializerMethodField()
+
+    class Meta(AuthorNovelListSerializer.Meta):
+        fields = AuthorNovelListSerializer.Meta.fields + ("author", "description", "chapter_count")
+
+    def get_chapter_count(self, obj):
+        if hasattr(obj, "chapter_count"):
+            return obj.chapter_count
+        return obj.chapters.count()
+
+
+class AuthorNovelCreateSerializer(serializers.Serializer):
+    title = serializers.CharField(max_length=255)
+    category_id = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.filter(is_active=True),
+        source="category",
+    )
+    cover = serializers.URLField(max_length=500, required=False, allow_blank=True)
+    description = serializers.CharField(required=False, allow_blank=True)
+    status = serializers.ChoiceField(choices=Novel.Status.choices, required=False, default=Novel.Status.SERIALIZING)
+
+    def validate_status(self, value):
+        if value == Novel.Status.REMOVED:
+            raise serializers.ValidationError("New novels cannot be created as removed.")
+        return value
+
+
+class AuthorNovelUpdateSerializer(serializers.Serializer):
+    title = serializers.CharField(max_length=255, required=False)
+    category_id = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.filter(is_active=True),
+        source="category",
+        required=False,
+    )
+    cover = serializers.URLField(max_length=500, required=False, allow_blank=True)
+    description = serializers.CharField(required=False, allow_blank=True)
+    status = serializers.ChoiceField(choices=Novel.Status.choices, required=False)
+
+
+class AuthorNovelSubmitSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Novel
+        fields = ("id", "audit_status")
+
+
 class NovelRatingSerializer(serializers.ModelSerializer):
     class Meta:
         model = NovelRating

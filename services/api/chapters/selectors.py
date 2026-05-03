@@ -1,4 +1,5 @@
 from .models import Chapter
+from users.permissions import is_admin_user
 
 
 def get_public_chapters_for_novel(novel_id):
@@ -43,3 +44,17 @@ def get_adjacent_chapter_ids(chapter):
         .first()
     )
     return previous_id, next_id
+
+
+def get_author_chapters_for_novel(user, novel_id):
+    queryset = Chapter.objects.select_related("novel", "novel__author").filter(novel_id=novel_id)
+    if not is_admin_user(user):
+        queryset = queryset.filter(novel__author=user)
+    return queryset.order_by("chapter_number", "id")
+
+
+def get_author_chapter_by_id(user, chapter_id):
+    queryset = Chapter.objects.select_related("novel", "novel__author", "novel__category").filter(id=chapter_id)
+    if not is_admin_user(user):
+        queryset = queryset.filter(novel__author=user)
+    return queryset.first()
