@@ -111,6 +111,40 @@ def get_admin_pending_novels(params):
     return queryset.order_by("-updated_at", "-created_at")
 
 
+def get_admin_novels(params):
+    queryset = Novel.objects.select_related("author", "category", "reviewer")
+
+    keyword = params.get("keyword")
+    if keyword:
+        queryset = queryset.filter(
+            Q(title__icontains=keyword)
+            | Q(description__icontains=keyword)
+            | Q(author__username__icontains=keyword)
+            | Q(author__nickname__icontains=keyword)
+        )
+
+    category = params.get("category")
+    if category:
+        if str(category).isdigit():
+            queryset = queryset.filter(category_id=int(category))
+        else:
+            queryset = queryset.filter(category__slug=category)
+
+    status = params.get("status")
+    if status:
+        queryset = queryset.filter(status=status)
+
+    audit_status = params.get("audit_status")
+    if audit_status:
+        queryset = queryset.filter(audit_status=audit_status)
+
+    author_id = params.get("author_id")
+    if author_id:
+        queryset = queryset.filter(author_id=author_id)
+
+    return queryset.order_by("-created_at", "-id")
+
+
 def get_admin_novel_by_id(novel_id):
     return (
         Novel.objects.select_related("author", "category", "reviewer")

@@ -66,3 +66,22 @@ def delete_comment(user, comment_id):
     Novel.objects.filter(id=comment.novel_id, comment_count__gt=0).update(
         comment_count=F("comment_count") - 1,
     )
+
+
+@transaction.atomic
+def update_admin_comment_status(comment, status):
+    old_status = comment.status
+    if old_status == status:
+        return comment
+
+    comment.status = status
+    comment.save(update_fields=["status", "updated_at"])
+
+    if old_status == Comment.Status.NORMAL and status != Comment.Status.NORMAL:
+        Novel.objects.filter(id=comment.novel_id, comment_count__gt=0).update(
+            comment_count=F("comment_count") - 1,
+        )
+    elif old_status != Comment.Status.NORMAL and status == Comment.Status.NORMAL:
+        Novel.objects.filter(id=comment.novel_id).update(comment_count=F("comment_count") + 1)
+
+    return comment

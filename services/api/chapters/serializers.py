@@ -126,6 +126,43 @@ class AdminChapterListSerializer(serializers.ModelSerializer):
         )
 
 
+class AdminChapterManagementSerializer(serializers.ModelSerializer):
+    novel = AdminChapterNovelSerializer(read_only=True)
+    novel_id = serializers.IntegerField(read_only=True)
+    novel_title = serializers.CharField(source="novel.title", read_only=True)
+    author_id = serializers.IntegerField(source="novel.author_id", read_only=True)
+    author_username = serializers.CharField(source="novel.author.username", read_only=True)
+    price = serializers.DecimalField(max_digits=8, decimal_places=2)
+
+    class Meta:
+        model = Chapter
+        fields = (
+            "id",
+            "novel",
+            "novel_id",
+            "novel_title",
+            "author_id",
+            "author_username",
+            "title",
+            "chapter_number",
+            "word_count",
+            "is_free",
+            "price",
+            "status",
+            "audit_status",
+            "published_at",
+            "created_at",
+            "updated_at",
+        )
+
+
+class AdminChapterManagementDetailSerializer(AdminChapterManagementSerializer):
+    reviewer = NovelAuthorSerializer(read_only=True)
+
+    class Meta(AdminChapterManagementSerializer.Meta):
+        fields = AdminChapterManagementSerializer.Meta.fields + ("content", "reviewer", "reviewed_at")
+
+
 class AdminChapterDetailSerializer(AdminChapterListSerializer):
     class Meta(AdminChapterListSerializer.Meta):
         fields = AdminChapterListSerializer.Meta.fields + ("content",)
@@ -146,6 +183,18 @@ class AdminChapterRejectInputSerializer(serializers.Serializer):
 class AdminChapterPendingQuerySerializer(serializers.Serializer):
     novel_id = serializers.IntegerField(min_value=1, required=False)
     keyword = serializers.CharField(max_length=100, required=False, allow_blank=True)
+
+
+class AdminChapterManagementQuerySerializer(serializers.Serializer):
+    keyword = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    novel_id = serializers.IntegerField(min_value=1, required=False)
+    status = serializers.ChoiceField(choices=Chapter.Status.choices, required=False)
+    audit_status = serializers.ChoiceField(choices=Chapter.AuditStatus.choices, required=False)
+    author_id = serializers.IntegerField(min_value=1, required=False)
+
+
+class AdminChapterStatusUpdateSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=Chapter.Status.choices)
 
 
 class ReviewerChapterRejectInputSerializer(serializers.Serializer):

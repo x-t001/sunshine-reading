@@ -98,7 +98,7 @@ class IsAdminUser(BasePermission):
             raise PermissionDenied("用户已被封禁。")
         if is_admin_user(user):
             return True
-        raise PermissionDenied("只有管理员可以访问用户管理接口。")
+        raise PermissionDenied("只有管理员可以访问管理接口。")
 
 
 class IsNovelOwnerOrAdmin(BasePermission):

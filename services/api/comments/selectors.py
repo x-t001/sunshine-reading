@@ -1,3 +1,4 @@
+from django.db import models
 from django.db.models import Prefetch
 
 from chapters.models import Chapter
@@ -61,6 +62,46 @@ def get_chapter_comments(chapter_id):
         .select_related("user", "novel", "chapter", "parent")
         .prefetch_related(_normal_replies_prefetch())
         .order_by("-created_at")
+    )
+
+
+def get_admin_comments(params):
+    queryset = Comment.objects.select_related("user", "novel", "chapter", "parent")
+
+    keyword = params.get("keyword")
+    if keyword:
+        queryset = queryset.filter(
+            models.Q(content__icontains=keyword)
+            | models.Q(user__username__icontains=keyword)
+            | models.Q(user__nickname__icontains=keyword)
+            | models.Q(novel__title__icontains=keyword)
+            | models.Q(chapter__title__icontains=keyword)
+        )
+
+    user_id = params.get("user_id")
+    if user_id:
+        queryset = queryset.filter(user_id=user_id)
+
+    novel_id = params.get("novel_id")
+    if novel_id:
+        queryset = queryset.filter(novel_id=novel_id)
+
+    chapter_id = params.get("chapter_id")
+    if chapter_id:
+        queryset = queryset.filter(chapter_id=chapter_id)
+
+    status = params.get("status")
+    if status:
+        queryset = queryset.filter(status=status)
+
+    return queryset.order_by("-created_at", "-id")
+
+
+def get_admin_comment_by_id(comment_id):
+    return (
+        Comment.objects.select_related("user", "novel", "chapter", "parent")
+        .filter(id=comment_id)
+        .first()
     )
 
 

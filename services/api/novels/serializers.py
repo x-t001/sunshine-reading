@@ -175,6 +175,77 @@ class AdminNovelDetailSerializer(AdminNovelListSerializer):
         return obj.chapters.count()
 
 
+class AdminNovelManagementSerializer(serializers.ModelSerializer):
+    author = NovelAuthorSerializer(read_only=True)
+    author_id = serializers.IntegerField(read_only=True)
+    author_username = serializers.CharField(source="author.username", read_only=True)
+    author_nickname = serializers.CharField(source="author.nickname", read_only=True)
+    category = NovelCategorySerializer(read_only=True)
+    category_id = serializers.IntegerField(read_only=True, allow_null=True)
+    rating_score = serializers.DecimalField(max_digits=4, decimal_places=2)
+
+    class Meta:
+        model = Novel
+        fields = (
+            "id",
+            "title",
+            "author",
+            "author_id",
+            "author_username",
+            "author_nickname",
+            "category",
+            "category_id",
+            "status",
+            "audit_status",
+            "word_count",
+            "view_count",
+            "collect_count",
+            "comment_count",
+            "rating_score",
+            "rating_count",
+            "is_featured",
+            "created_at",
+            "updated_at",
+            "latest_chapter_title",
+            "latest_chapter_updated_at",
+        )
+
+
+class AdminNovelManagementDetailSerializer(AdminNovelManagementSerializer):
+    reviewer = NovelAuthorSerializer(read_only=True)
+    chapter_count = serializers.SerializerMethodField()
+
+    class Meta(AdminNovelManagementSerializer.Meta):
+        fields = AdminNovelManagementSerializer.Meta.fields + (
+            "cover",
+            "description",
+            "reviewer",
+            "reviewed_at",
+            "chapter_count",
+        )
+
+    def get_chapter_count(self, obj):
+        if hasattr(obj, "chapter_count"):
+            return obj.chapter_count
+        return obj.chapters.count()
+
+
+class AdminNovelManagementQuerySerializer(serializers.Serializer):
+    keyword = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    category = serializers.CharField(max_length=120, required=False, allow_blank=True)
+    status = serializers.ChoiceField(choices=Novel.Status.choices, required=False)
+    audit_status = serializers.ChoiceField(choices=Novel.AuditStatus.choices, required=False)
+    author_id = serializers.IntegerField(min_value=1, required=False)
+
+
+class AdminNovelStatusUpdateSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=Novel.Status.choices)
+
+
+class AdminNovelFeaturedUpdateSerializer(serializers.Serializer):
+    is_featured = serializers.BooleanField()
+
+
 class AdminNovelReviewSerializer(serializers.ModelSerializer):
     reviewer = NovelAuthorSerializer(read_only=True)
 

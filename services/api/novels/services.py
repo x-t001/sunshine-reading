@@ -132,6 +132,20 @@ def update_author_novel(novel, data):
 
 
 @transaction.atomic
+def update_admin_novel_status(novel, status):
+    novel.status = status
+    novel.save(update_fields=["status", "updated_at"])
+    return novel
+
+
+@transaction.atomic
+def update_admin_novel_featured(novel, is_featured):
+    novel.is_featured = is_featured
+    novel.save(update_fields=["is_featured", "updated_at"])
+    return novel
+
+
+@transaction.atomic
 def submit_novel_review(novel):
     missing_fields = []
     if not novel.title:

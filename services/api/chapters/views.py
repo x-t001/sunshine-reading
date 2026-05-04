@@ -1,6 +1,6 @@
 from rest_framework.exceptions import NotFound
 from rest_framework.views import APIView
-from users.permissions import IsAuthorOrAdmin, IsReviewerOrAdmin, IsStaffAdmin
+from users.permissions import IsAdminUser, IsAuthorOrAdmin, IsReviewerOrAdmin, IsStaffAdmin
 
 from common.pagination import PublicPageNumberPagination
 from common.response import success_response
@@ -9,6 +9,7 @@ from novels.selectors import get_author_novel_by_id, get_public_novel_by_id
 from .selectors import (
     get_adjacent_chapter_ids,
     get_admin_chapter_by_id,
+    get_admin_chapters,
     get_admin_pending_chapters,
     get_author_chapter_by_id,
     get_author_chapters_for_novel,
@@ -21,9 +22,13 @@ from .selectors import (
 from .serializers import (
     AdminChapterDetailSerializer,
     AdminChapterListSerializer,
+    AdminChapterManagementDetailSerializer,
+    AdminChapterManagementQuerySerializer,
+    AdminChapterManagementSerializer,
     AdminChapterPendingQuerySerializer,
     AdminChapterRejectInputSerializer,
     AdminChapterReviewSerializer,
+    AdminChapterStatusUpdateSerializer,
     AuthorChapterCreateSerializer,
     AuthorChapterDetailSerializer,
     AuthorChapterListSerializer,
@@ -40,6 +45,7 @@ from .services import (
     delete_author_chapter,
     reject_chapter_review,
     submit_chapter_review,
+    update_admin_chapter_status,
     update_author_chapter,
 )
 
@@ -146,8 +152,22 @@ class AdminPendingChapterListView(APIView):
         return success_response(paginator.get_paginated_data(serializer.data))
 
 
+class AdminChapterListView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        query_serializer = AdminChapterManagementQuerySerializer(data=request.query_params)
+        query_serializer.is_valid(raise_exception=True)
+
+        paginator = PublicPageNumberPagination()
+        queryset = get_admin_chapters(query_serializer.validated_data)
+        page = paginator.paginate_queryset(queryset, request, view=self)
+        serializer = AdminChapterManagementSerializer(page, many=True)
+        return success_response(paginator.get_paginated_data(serializer.data))
+
+
 class AdminChapterDetailView(APIView):
-    permission_classes = [IsStaffAdmin]
+    permission_classes = [IsAdminUser]
 
     def get_object(self, id):
         chapter = get_admin_chapter_by_id(id)
@@ -157,7 +177,21 @@ class AdminChapterDetailView(APIView):
 
     def get(self, request, id):
         chapter = self.get_object(id)
-        return success_response(AdminChapterDetailSerializer(chapter).data)
+        return success_response(AdminChapterManagementDetailSerializer(chapter).data)
+
+
+class AdminChapterStatusView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def patch(self, request, id):
+        chapter = get_admin_chapter_by_id(id)
+        if chapter is None:
+            raise NotFound("Chapter not found.")
+
+        serializer = AdminChapterStatusUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        chapter = update_admin_chapter_status(chapter, serializer.validated_data["status"])
+        return success_response(AdminChapterManagementDetailSerializer(chapter).data)
 
 
 class AdminChapterApproveView(APIView):

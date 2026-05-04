@@ -118,6 +118,16 @@ def update_author_chapter(chapter, data):
 
 
 @transaction.atomic
+def update_admin_chapter_status(chapter, status):
+    chapter.status = status
+    if status == Chapter.Status.PUBLISHED and chapter.published_at is None:
+        chapter.published_at = timezone.now()
+    chapter.save(update_fields=["status", "published_at", "updated_at"])
+    recalculate_novel_chapter_stats(chapter.novel_id)
+    return chapter
+
+
+@transaction.atomic
 def submit_chapter_review(chapter):
     missing_fields = []
     if not chapter.title:

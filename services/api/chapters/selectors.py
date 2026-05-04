@@ -79,6 +79,37 @@ def get_admin_pending_chapters(params):
     return queryset.order_by("-updated_at", "-created_at")
 
 
+def get_admin_chapters(params):
+    queryset = Chapter.objects.select_related("novel", "novel__author", "novel__category", "reviewer")
+
+    keyword = params.get("keyword")
+    if keyword:
+        queryset = queryset.filter(
+            Q(title__icontains=keyword)
+            | Q(novel__title__icontains=keyword)
+            | Q(novel__author__username__icontains=keyword)
+            | Q(novel__author__nickname__icontains=keyword)
+        )
+
+    novel_id = params.get("novel_id")
+    if novel_id:
+        queryset = queryset.filter(novel_id=novel_id)
+
+    status = params.get("status")
+    if status:
+        queryset = queryset.filter(status=status)
+
+    audit_status = params.get("audit_status")
+    if audit_status:
+        queryset = queryset.filter(audit_status=audit_status)
+
+    author_id = params.get("author_id")
+    if author_id:
+        queryset = queryset.filter(novel__author_id=author_id)
+
+    return queryset.order_by("-created_at", "-id")
+
+
 def get_admin_chapter_by_id(chapter_id):
     return (
         Chapter.objects.select_related("novel", "novel__author", "novel__category", "reviewer")

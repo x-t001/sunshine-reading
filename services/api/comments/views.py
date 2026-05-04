@@ -1,13 +1,26 @@
 from rest_framework.exceptions import NotFound
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
+from users.permissions import IsAdminUser
 
 from common.pagination import PublicPageNumberPagination
 from common.response import success_response
 
-from .selectors import get_chapter_comments, get_normal_comment, get_novel_comments
-from .serializers import CommentSerializer, CreateCommentSerializer
-from .services import create_comment, delete_comment
+from .selectors import (
+    get_admin_comment_by_id,
+    get_admin_comments,
+    get_chapter_comments,
+    get_normal_comment,
+    get_novel_comments,
+)
+from .serializers import (
+    AdminCommentQuerySerializer,
+    AdminCommentSerializer,
+    AdminCommentStatusUpdateSerializer,
+    CommentSerializer,
+    CreateCommentSerializer,
+)
+from .services import create_comment, delete_comment, update_admin_comment_status
 
 
 class NovelCommentListCreateView(APIView):
@@ -63,3 +76,41 @@ class CommentDetailView(APIView):
     def delete(self, request, comment_id):
         delete_comment(user=request.user, comment_id=comment_id)
         return success_response()
+
+
+class AdminCommentListView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        query_serializer = AdminCommentQuerySerializer(data=request.query_params)
+        query_serializer.is_valid(raise_exception=True)
+
+        paginator = PublicPageNumberPagination()
+        queryset = get_admin_comments(query_serializer.validated_data)
+        page = paginator.paginate_queryset(queryset, request, view=self)
+        serializer = AdminCommentSerializer(page, many=True)
+        return success_response(paginator.get_paginated_data(serializer.data))
+
+
+class AdminCommentDetailView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request, comment_id):
+        comment = get_admin_comment_by_id(comment_id)
+        if comment is None:
+            raise NotFound("Comment not found.")
+        return success_response(AdminCommentSerializer(comment).data)
+
+
+class AdminCommentStatusView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def patch(self, request, comment_id):
+        comment = get_admin_comment_by_id(comment_id)
+        if comment is None:
+            raise NotFound("Comment not found.")
+
+        serializer = AdminCommentStatusUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        comment = update_admin_comment_status(comment, serializer.validated_data["status"])
+        return success_response(AdminCommentSerializer(comment).data)
