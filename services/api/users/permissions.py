@@ -87,6 +87,20 @@ class IsReviewerOrAdmin(BasePermission):
         raise PermissionDenied("只有审核员或管理员可以访问审核接口。")
 
 
+class IsAdminUser(BasePermission):
+    message = "需要管理员权限。"
+
+    def has_permission(self, request, view):
+        user = request.user
+        if not user or not user.is_authenticated:
+            raise NotAuthenticated("请先登录。")
+        if getattr(user, "is_banned", False):
+            raise PermissionDenied("用户已被封禁。")
+        if is_admin_user(user):
+            return True
+        raise PermissionDenied("只有管理员可以访问用户管理接口。")
+
+
 class IsNovelOwnerOrAdmin(BasePermission):
     message = "Only the novel owner or an admin can access this resource."
 

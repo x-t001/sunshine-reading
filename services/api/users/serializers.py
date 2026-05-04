@@ -22,6 +22,64 @@ class UserProfileSerializer(serializers.ModelSerializer):
         read_only_fields = ("id", "username", "role")
 
 
+class AdminUserListQuerySerializer(serializers.Serializer):
+    keyword = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    role = serializers.ChoiceField(choices=User.Role.choices, required=False)
+    is_banned = serializers.BooleanField(required=False)
+
+
+class AdminUserListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = (
+            "id",
+            "username",
+            "nickname",
+            "email",
+            "phone",
+            "role",
+            "is_banned",
+            "is_active",
+            "is_staff",
+            "is_superuser",
+            "date_joined",
+            "last_login",
+        )
+        read_only_fields = fields
+
+
+class AdminUserDetailSerializer(AdminUserListSerializer):
+    novel_count = serializers.IntegerField(read_only=True, default=0)
+    comment_count = serializers.IntegerField(read_only=True, default=0)
+    bookshelf_count = serializers.IntegerField(read_only=True, default=0)
+    rating_count = serializers.IntegerField(read_only=True, default=0)
+
+    class Meta(AdminUserListSerializer.Meta):
+        fields = AdminUserListSerializer.Meta.fields + (
+            "avatar",
+            "bio",
+            "novel_count",
+            "comment_count",
+            "bookshelf_count",
+            "rating_count",
+        )
+
+
+class AdminUserRoleUpdateSerializer(serializers.Serializer):
+    role = serializers.ChoiceField(choices=User.Role.choices)
+
+
+class AdminUserBanSerializer(serializers.Serializer):
+    reason = serializers.CharField(max_length=500, required=False, allow_blank=True)
+
+
+class AdminUserStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ("id", "username", "nickname", "role", "is_banned", "is_active", "is_staff", "is_superuser")
+        read_only_fields = fields
+
+
 class RegisterSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=150)
     password = serializers.CharField(write_only=True, trim_whitespace=False)
