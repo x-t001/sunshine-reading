@@ -2,14 +2,48 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { categories } from "@/mocks/categories";
 import { useAuth } from "@/hooks/useAuth";
+import { getAdminUsers } from "@/lib/api/admin";
 
 export function SiteHeader() {
   const router = useRouter();
   const { user, loading, logout } = useAuth();
+  const [canAccessAdminPanel, setCanAccessAdminPanel] = useState(false);
   const canAccessAuthorCenter = user?.role === "author" || user?.role === "admin";
   const canAccessReviewerCenter = user?.role === "reviewer" || user?.role === "admin" || user?.is_staff || user?.is_superuser;
+
+  useEffect(() => {
+    let active = true;
+
+    async function checkAdminAccess() {
+      if (!user) {
+        setCanAccessAdminPanel(false);
+        return;
+      }
+      if (user.role === "admin" || user.is_staff || user.is_superuser) {
+        setCanAccessAdminPanel(true);
+        return;
+      }
+
+      try {
+        await getAdminUsers({ page_size: 1 });
+        if (active) {
+          setCanAccessAdminPanel(true);
+        }
+      } catch {
+        if (active) {
+          setCanAccessAdminPanel(false);
+        }
+      }
+    }
+
+    void checkAdminAccess();
+    return () => {
+      active = false;
+    };
+  }, [user]);
 
   function handleLogout() {
     logout();
@@ -32,6 +66,7 @@ export function SiteHeader() {
           <Link href="/history">历史</Link>
           {canAccessAuthorCenter ? <Link href="/author">作者中心</Link> : null}
           {canAccessReviewerCenter ? <Link href="/reviewer">审核中心</Link> : null}
+          {canAccessAdminPanel ? <Link href="/admin">管理后台</Link> : null}
         </nav>
         <div className="ml-auto flex shrink-0 items-center gap-2 text-sm">
           {user ? (
