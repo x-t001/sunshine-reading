@@ -26,6 +26,8 @@ class NovelAdmin(admin.ModelAdmin):
         "category",
         "status",
         "audit_status",
+        "reviewer",
+        "reviewed_at",
         "word_count",
         "view_count",
         "rating_score",
@@ -33,10 +35,10 @@ class NovelAdmin(admin.ModelAdmin):
         "is_featured",
         "latest_chapter_updated_at",
     )
-    list_filter = ("status", "audit_status", "is_featured", "category", "created_at")
+    list_filter = ("status", "audit_status", "reviewer", "is_featured", "category", "created_at")
     search_fields = ("title", "description", "author__username", "author__nickname")
     ordering = ("-updated_at", "-created_at")
-    autocomplete_fields = ("author", "category")
+    autocomplete_fields = ("author", "category", "reviewer")
     readonly_fields = (
         "word_count",
         "view_count",
@@ -44,6 +46,7 @@ class NovelAdmin(admin.ModelAdmin):
         "comment_count",
         "rating_score",
         "rating_count",
+        "reviewed_at",
         "latest_chapter_title",
         "latest_chapter_updated_at",
         "created_at",
@@ -51,7 +54,7 @@ class NovelAdmin(admin.ModelAdmin):
     )
     fieldsets = (
         ("基本信息", {"fields": ("title", "author", "category", "cover", "description")}),
-        ("状态信息", {"fields": ("status", "audit_status", "is_featured")}),
+        ("状态信息", {"fields": ("status", "audit_status", "reviewer", "reviewed_at", "is_featured")}),
         (
             "统计信息",
             {

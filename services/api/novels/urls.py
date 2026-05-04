@@ -16,8 +16,10 @@ from .views import (
     ReviewerAuditLogListView,
     ReviewerNovelApproveView,
     ReviewerNovelClaimView,
+    ReviewerNovelDetailView,
     ReviewerNovelRejectView,
     ReviewerPendingNovelListView,
+    ReviewerReviewingNovelListView,
 )
 
 app_name = "novels"
@@ -36,6 +38,8 @@ urlpatterns = [
     path("admin/novels/<int:id>/approve/", AdminNovelApproveView.as_view(), name="admin-novel-approve"),
     path("admin/novels/<int:id>/reject/", AdminNovelRejectView.as_view(), name="admin-novel-reject"),
     path("reviewer/novels/pending/", ReviewerPendingNovelListView.as_view(), name="reviewer-novel-pending-list"),
+    path("reviewer/novels/reviewing/", ReviewerReviewingNovelListView.as_view(), name="reviewer-novel-reviewing-list"),
+    path("reviewer/novels/<int:id>/", ReviewerNovelDetailView.as_view(), name="reviewer-novel-detail"),
     path("reviewer/novels/<int:id>/claim/", ReviewerNovelClaimView.as_view(), name="reviewer-novel-claim"),
     path("reviewer/novels/<int:id>/approve/", ReviewerNovelApproveView.as_view(), name="reviewer-novel-approve"),
     path("reviewer/novels/<int:id>/reject/", ReviewerNovelRejectView.as_view(), name="reviewer-novel-reject"),

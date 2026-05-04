@@ -17,6 +17,7 @@ from .selectors import (
     get_reviewer_audit_logs,
     get_reviewer_novel_by_id,
     get_reviewer_pending_novels,
+    get_reviewer_reviewing_novels,
 )
 from .serializers import (
     AdminNovelDetailSerializer,
@@ -230,11 +231,35 @@ class ReviewerPendingNovelListView(APIView):
         return success_response(paginator.get_paginated_data(serializer.data))
 
 
+class ReviewerReviewingNovelListView(APIView):
+    permission_classes = [IsReviewerOrAdmin]
+
+    def get(self, request):
+        query_serializer = AdminNovelPendingQuerySerializer(data=request.query_params)
+        query_serializer.is_valid(raise_exception=True)
+
+        paginator = PublicPageNumberPagination()
+        queryset = get_reviewer_reviewing_novels(request.user, query_serializer.validated_data)
+        page = paginator.paginate_queryset(queryset, request, view=self)
+        serializer = AdminNovelListSerializer(page, many=True)
+        return success_response(paginator.get_paginated_data(serializer.data))
+
+
+class ReviewerNovelDetailView(APIView):
+    permission_classes = [IsReviewerOrAdmin]
+
+    def get(self, request, id):
+        novel = get_reviewer_novel_by_id(request.user, id)
+        if novel is None:
+            raise NotFound("Novel not found.")
+        return success_response(AdminNovelDetailSerializer(novel).data)
+
+
 class ReviewerNovelClaimView(APIView):
     permission_classes = [IsReviewerOrAdmin]
 
     def post(self, request, id):
-        novel = get_reviewer_novel_by_id(id)
+        novel = get_admin_novel_by_id(id)
         if novel is None:
             raise NotFound("Novel not found.")
 
@@ -246,7 +271,7 @@ class ReviewerNovelApproveView(APIView):
     permission_classes = [IsReviewerOrAdmin]
 
     def post(self, request, id):
-        novel = get_reviewer_novel_by_id(id)
+        novel = get_admin_novel_by_id(id)
         if novel is None:
             raise NotFound("Novel not found.")
 
@@ -258,7 +283,7 @@ class ReviewerNovelRejectView(APIView):
     permission_classes = [IsReviewerOrAdmin]
 
     def post(self, request, id):
-        novel = get_reviewer_novel_by_id(id)
+        novel = get_admin_novel_by_id(id)
         if novel is None:
             raise NotFound("Novel not found.")
 

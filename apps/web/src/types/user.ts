@@ -3,7 +3,9 @@ export type UserBasic = {
   username: string;
   nickname: string;
   email: string;
-  role: "reader" | "author" | "admin";
+  role: "reader" | "author" | "reviewer" | "admin";
+  is_staff?: boolean;
+  is_superuser?: boolean;
 };
 
 export type CurrentUser = UserBasic & {

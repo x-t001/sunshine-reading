@@ -78,6 +78,15 @@ class Novel(TimeStampedModel):
         default=AuditStatus.DRAFT,
         db_index=True,
     )
+    reviewer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="审核员",
+        null=True,
+        blank=True,
+        related_name="reviewed_novels",
+        on_delete=models.SET_NULL,
+    )
+    reviewed_at = models.DateTimeField("审核完成时间", null=True, blank=True, db_index=True)
     word_count = models.PositiveIntegerField("字数", default=0)
     view_count = models.PositiveIntegerField("阅读量", default=0, db_index=True)
     collect_count = models.PositiveIntegerField("收藏数", default=0)
@@ -102,6 +111,8 @@ class Novel(TimeStampedModel):
             models.Index(fields=["author", "status"]),
             models.Index(fields=["category", "status"]),
             models.Index(fields=["status", "audit_status"]),
+            models.Index(fields=["audit_status", "reviewer"]),
+            models.Index(fields=["reviewer", "reviewed_at"]),
             models.Index(fields=["is_featured", "audit_status"]),
             models.Index(fields=["-view_count"]),
         ]

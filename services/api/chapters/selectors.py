@@ -64,7 +64,7 @@ def get_author_chapter_by_id(user, chapter_id):
 
 
 def get_admin_pending_chapters(params):
-    queryset = Chapter.objects.select_related("novel", "novel__author", "novel__category").filter(
+    queryset = Chapter.objects.select_related("novel", "novel__author", "novel__category", "reviewer").filter(
         audit_status=Chapter.AuditStatus.PENDING,
     )
 
@@ -81,7 +81,7 @@ def get_admin_pending_chapters(params):
 
 def get_admin_chapter_by_id(chapter_id):
     return (
-        Chapter.objects.select_related("novel", "novel__author", "novel__category")
+        Chapter.objects.select_related("novel", "novel__author", "novel__category", "reviewer")
         .filter(id=chapter_id)
         .first()
     )
@@ -91,5 +91,28 @@ def get_reviewer_pending_chapters(params):
     return get_admin_pending_chapters(params)
 
 
-def get_reviewer_chapter_by_id(chapter_id):
-    return get_admin_chapter_by_id(chapter_id)
+def get_reviewer_reviewing_chapters(user, params):
+    queryset = Chapter.objects.select_related("novel", "novel__author", "novel__category", "reviewer").filter(
+        audit_status=Chapter.AuditStatus.REVIEWING,
+    )
+    if not is_admin_user(user):
+        queryset = queryset.filter(reviewer=user)
+
+    novel_id = params.get("novel_id")
+    if novel_id:
+        queryset = queryset.filter(novel_id=novel_id)
+
+    keyword = params.get("keyword")
+    if keyword:
+        queryset = queryset.filter(Q(title__icontains=keyword) | Q(novel__title__icontains=keyword))
+
+    return queryset.order_by("-updated_at", "-created_at")
+
+
+def get_reviewer_chapter_by_id(user, chapter_id):
+    queryset = Chapter.objects.select_related("novel", "novel__author", "novel__category", "reviewer").filter(
+        id=chapter_id,
+    )
+    if not is_admin_user(user):
+        queryset = queryset.filter(Q(audit_status=Chapter.AuditStatus.PENDING) | Q(reviewer=user))
+    return queryset.first()

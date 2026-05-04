@@ -2,9 +2,11 @@ from decimal import Decimal, ROUND_HALF_UP
 
 from django.db import transaction
 from django.db.models import Avg, Count
-from rest_framework.exceptions import NotFound, ValidationError
+from django.utils import timezone
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 
 from common.models import AuditLog
+from users.permissions import is_admin_user
 
 from .models import Novel, NovelRating
 from .selectors import get_public_novel_by_id, get_rating_for_user
@@ -23,6 +25,17 @@ def _create_novel_audit_log(novel, action, from_status, to_status, reviewer=None
         to_status=to_status or "",
         reason=reason or "",
     )
+
+
+def _ensure_can_review_novel(novel, reviewer):
+    if (
+        reviewer
+        and novel.audit_status == Novel.AuditStatus.REVIEWING
+        and novel.reviewer_id
+        and novel.reviewer_id != reviewer.id
+        and not is_admin_user(reviewer)
+    ):
+        raise PermissionDenied("You can only review novels you claimed.")
 
 
 def build_rating_summary(novel, user=None):
@@ -141,7 +154,9 @@ def submit_novel_review(novel):
 
     from_status = novel.audit_status
     novel.audit_status = Novel.AuditStatus.PENDING
-    novel.save(update_fields=["audit_status", "updated_at"])
+    novel.reviewer = None
+    novel.reviewed_at = None
+    novel.save(update_fields=["audit_status", "reviewer", "reviewed_at", "updated_at"])
     _create_novel_audit_log(
         novel=novel,
         action=AuditLog.Action.SUBMIT,
@@ -158,7 +173,9 @@ def claim_novel_review(novel, reviewer):
 
     from_status = novel.audit_status
     novel.audit_status = Novel.AuditStatus.REVIEWING
-    novel.save(update_fields=["audit_status", "updated_at"])
+    novel.reviewer = reviewer
+    novel.reviewed_at = None
+    novel.save(update_fields=["audit_status", "reviewer", "reviewed_at", "updated_at"])
     _create_novel_audit_log(
         novel=novel,
         action=AuditLog.Action.CLAIM,
@@ -175,10 +192,14 @@ def approve_novel_review(novel, reviewer=None):
         raise ValidationError({"status": ["Removed novels cannot be approved."]})
     if novel.audit_status not in REVIEWABLE_AUDIT_STATUSES:
         raise ValidationError({"audit_status": ["Only pending or reviewing novels can be approved."]})
+    _ensure_can_review_novel(novel, reviewer)
 
     from_status = novel.audit_status
     novel.audit_status = Novel.AuditStatus.APPROVED
-    novel.save(update_fields=["audit_status", "updated_at"])
+    if novel.reviewer_id is None and reviewer is not None:
+        novel.reviewer = reviewer
+    novel.reviewed_at = timezone.now()
+    novel.save(update_fields=["audit_status", "reviewer", "reviewed_at", "updated_at"])
     _create_novel_audit_log(
         novel=novel,
         action=AuditLog.Action.APPROVE,
@@ -195,10 +216,14 @@ def reject_novel_review(novel, reviewer=None, reason="", require_reason=False):
         raise ValidationError({"reason": ["Reject reason is required."]})
     if novel.audit_status not in REVIEWABLE_AUDIT_STATUSES:
         raise ValidationError({"audit_status": ["Only pending or reviewing novels can be rejected."]})
+    _ensure_can_review_novel(novel, reviewer)
 
     from_status = novel.audit_status
     novel.audit_status = Novel.AuditStatus.REJECTED
-    novel.save(update_fields=["audit_status", "updated_at"])
+    if novel.reviewer_id is None and reviewer is not None:
+        novel.reviewer = reviewer
+    novel.reviewed_at = timezone.now()
+    novel.save(update_fields=["audit_status", "reviewer", "reviewed_at", "updated_at"])
     _create_novel_audit_log(
         novel=novel,
         action=AuditLog.Action.REJECT,

@@ -3,10 +3,11 @@ import re
 from django.db import transaction
 from django.db.models import Sum
 from django.utils import timezone
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from common.models import AuditLog
 from novels.models import Novel
+from users.permissions import is_admin_user
 
 from .models import Chapter
 
@@ -24,6 +25,17 @@ def _create_chapter_audit_log(chapter, action, from_status, to_status, reviewer=
         to_status=to_status or "",
         reason=reason or "",
     )
+
+
+def _ensure_can_review_chapter(chapter, reviewer):
+    if (
+        reviewer
+        and chapter.audit_status == Chapter.AuditStatus.REVIEWING
+        and chapter.reviewer_id
+        and chapter.reviewer_id != reviewer.id
+        and not is_admin_user(reviewer)
+    ):
+        raise PermissionDenied("You can only review chapters you claimed.")
 
 
 def calculate_word_count(content):
@@ -128,7 +140,9 @@ def submit_chapter_review(chapter):
 
     from_status = chapter.audit_status
     chapter.audit_status = Chapter.AuditStatus.PENDING
-    chapter.save(update_fields=["audit_status", "updated_at"])
+    chapter.reviewer = None
+    chapter.reviewed_at = None
+    chapter.save(update_fields=["audit_status", "reviewer", "reviewed_at", "updated_at"])
     _create_chapter_audit_log(
         chapter=chapter,
         action=AuditLog.Action.SUBMIT,
@@ -156,7 +170,9 @@ def claim_chapter_review(chapter, reviewer):
 
     from_status = chapter.audit_status
     chapter.audit_status = Chapter.AuditStatus.REVIEWING
-    chapter.save(update_fields=["audit_status", "updated_at"])
+    chapter.reviewer = reviewer
+    chapter.reviewed_at = None
+    chapter.save(update_fields=["audit_status", "reviewer", "reviewed_at", "updated_at"])
     _create_chapter_audit_log(
         chapter=chapter,
         action=AuditLog.Action.CLAIM,
@@ -171,13 +187,17 @@ def claim_chapter_review(chapter, reviewer):
 def approve_chapter_review(chapter, reviewer=None):
     if chapter.audit_status not in REVIEWABLE_AUDIT_STATUSES:
         raise ValidationError({"audit_status": ["Only pending or reviewing chapters can be approved."]})
+    _ensure_can_review_chapter(chapter, reviewer)
 
     from_status = chapter.audit_status
     chapter.audit_status = Chapter.AuditStatus.APPROVED
     chapter.status = Chapter.Status.PUBLISHED
+    if chapter.reviewer_id is None and reviewer is not None:
+        chapter.reviewer = reviewer
+    chapter.reviewed_at = timezone.now()
     if chapter.published_at is None:
         chapter.published_at = timezone.now()
-    chapter.save(update_fields=["audit_status", "status", "published_at", "updated_at"])
+    chapter.save(update_fields=["audit_status", "reviewer", "reviewed_at", "status", "published_at", "updated_at"])
     recalculate_novel_chapter_stats(chapter.novel_id)
     _create_chapter_audit_log(
         chapter=chapter,
@@ -195,11 +215,15 @@ def reject_chapter_review(chapter, reviewer=None, reason="", require_reason=Fals
         raise ValidationError({"reason": ["Reject reason is required."]})
     if chapter.audit_status not in REVIEWABLE_AUDIT_STATUSES:
         raise ValidationError({"audit_status": ["Only pending or reviewing chapters can be rejected."]})
+    _ensure_can_review_chapter(chapter, reviewer)
 
     from_status = chapter.audit_status
     chapter.audit_status = Chapter.AuditStatus.REJECTED
     chapter.status = Chapter.Status.DRAFT
-    chapter.save(update_fields=["audit_status", "status", "updated_at"])
+    if chapter.reviewer_id is None and reviewer is not None:
+        chapter.reviewer = reviewer
+    chapter.reviewed_at = timezone.now()
+    chapter.save(update_fields=["audit_status", "reviewer", "reviewed_at", "status", "updated_at"])
     recalculate_novel_chapter_stats(chapter.novel_id)
     _create_chapter_audit_log(
         chapter=chapter,

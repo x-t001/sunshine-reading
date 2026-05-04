@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.conf import settings
 from django.db import models
 
 from common.models import TimeStampedModel
@@ -44,6 +45,15 @@ class Chapter(TimeStampedModel):
         default=AuditStatus.DRAFT,
         db_index=True,
     )
+    reviewer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="审核员",
+        null=True,
+        blank=True,
+        related_name="reviewed_chapters",
+        on_delete=models.SET_NULL,
+    )
+    reviewed_at = models.DateTimeField("审核完成时间", null=True, blank=True, db_index=True)
     published_at = models.DateTimeField("发布时间", null=True, blank=True, db_index=True)
 
     class Meta:
@@ -61,6 +71,8 @@ class Chapter(TimeStampedModel):
             models.Index(fields=["novel", "status", "chapter_number"]),
             models.Index(fields=["status", "published_at"]),
             models.Index(fields=["audit_status"]),
+            models.Index(fields=["audit_status", "reviewer"]),
+            models.Index(fields=["reviewer", "reviewed_at"]),
         ]
 
     def __str__(self):

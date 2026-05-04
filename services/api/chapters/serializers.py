@@ -103,6 +103,7 @@ class AdminChapterNovelSerializer(serializers.ModelSerializer):
 
 class AdminChapterListSerializer(serializers.ModelSerializer):
     novel = AdminChapterNovelSerializer(read_only=True)
+    reviewer = NovelAuthorSerializer(read_only=True)
     price = serializers.DecimalField(max_digits=8, decimal_places=2)
 
     class Meta:
@@ -116,6 +117,8 @@ class AdminChapterListSerializer(serializers.ModelSerializer):
             "price",
             "status",
             "audit_status",
+            "reviewer",
+            "reviewed_at",
             "published_at",
             "created_at",
             "updated_at",
@@ -129,9 +132,11 @@ class AdminChapterDetailSerializer(AdminChapterListSerializer):
 
 
 class AdminChapterReviewSerializer(serializers.ModelSerializer):
+    reviewer = NovelAuthorSerializer(read_only=True)
+
     class Meta:
         model = Chapter
-        fields = ("id", "title", "status", "audit_status", "published_at", "updated_at")
+        fields = ("id", "title", "status", "audit_status", "reviewer", "reviewed_at", "published_at", "updated_at")
 
 
 class AdminChapterRejectInputSerializer(serializers.Serializer):

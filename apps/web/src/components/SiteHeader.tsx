@@ -9,6 +9,7 @@ export function SiteHeader() {
   const router = useRouter();
   const { user, loading, logout } = useAuth();
   const canAccessAuthorCenter = user?.role === "author" || user?.role === "admin";
+  const canAccessReviewerCenter = user?.role === "reviewer" || user?.role === "admin" || user?.is_staff || user?.is_superuser;
 
   function handleLogout() {
     logout();
@@ -30,6 +31,7 @@ export function SiteHeader() {
           <Link href="/bookshelf">书架</Link>
           <Link href="/history">历史</Link>
           {canAccessAuthorCenter ? <Link href="/author">作者中心</Link> : null}
+          {canAccessReviewerCenter ? <Link href="/reviewer">审核中心</Link> : null}
         </nav>
         <div className="ml-auto flex shrink-0 items-center gap-2 text-sm">
           {user ? (

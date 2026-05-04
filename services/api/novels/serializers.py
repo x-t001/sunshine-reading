@@ -135,6 +135,7 @@ class AuthorNovelSubmitSerializer(serializers.ModelSerializer):
 class AdminNovelListSerializer(serializers.ModelSerializer):
     author = NovelAuthorSerializer(read_only=True)
     category = NovelCategorySerializer(read_only=True)
+    reviewer = NovelAuthorSerializer(read_only=True)
     rating_score = serializers.DecimalField(max_digits=4, decimal_places=2)
 
     class Meta:
@@ -145,8 +146,10 @@ class AdminNovelListSerializer(serializers.ModelSerializer):
             "cover",
             "author",
             "category",
+            "reviewer",
             "status",
             "audit_status",
+            "reviewed_at",
             "word_count",
             "view_count",
             "collect_count",
@@ -173,9 +176,11 @@ class AdminNovelDetailSerializer(AdminNovelListSerializer):
 
 
 class AdminNovelReviewSerializer(serializers.ModelSerializer):
+    reviewer = NovelAuthorSerializer(read_only=True)
+
     class Meta:
         model = Novel
-        fields = ("id", "title", "status", "audit_status", "updated_at")
+        fields = ("id", "title", "status", "audit_status", "reviewer", "reviewed_at", "updated_at")
 
 
 class AdminNovelRejectInputSerializer(serializers.Serializer):

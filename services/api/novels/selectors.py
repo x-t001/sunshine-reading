@@ -97,7 +97,7 @@ def get_author_novel_by_id(user, novel_id):
 
 
 def get_admin_pending_novels(params):
-    queryset = Novel.objects.select_related("author", "category").filter(audit_status=Novel.AuditStatus.PENDING)
+    queryset = Novel.objects.select_related("author", "category", "reviewer").filter(audit_status=Novel.AuditStatus.PENDING)
 
     keyword = params.get("keyword")
     if keyword:
@@ -113,7 +113,7 @@ def get_admin_pending_novels(params):
 
 def get_admin_novel_by_id(novel_id):
     return (
-        Novel.objects.select_related("author", "category")
+        Novel.objects.select_related("author", "category", "reviewer")
         .annotate(chapter_count=Count("chapters", distinct=True))
         .filter(id=novel_id)
         .first()
@@ -124,8 +124,34 @@ def get_reviewer_pending_novels(params):
     return get_admin_pending_novels(params)
 
 
-def get_reviewer_novel_by_id(novel_id):
-    return get_admin_novel_by_id(novel_id)
+def get_reviewer_reviewing_novels(user, params):
+    queryset = Novel.objects.select_related("author", "category", "reviewer").filter(
+        audit_status=Novel.AuditStatus.REVIEWING,
+    )
+    if not is_admin_user(user):
+        queryset = queryset.filter(reviewer=user)
+
+    keyword = params.get("keyword")
+    if keyword:
+        queryset = queryset.filter(
+            Q(title__icontains=keyword)
+            | Q(description__icontains=keyword)
+            | Q(author__username__icontains=keyword)
+            | Q(author__nickname__icontains=keyword)
+        )
+
+    return queryset.order_by("-updated_at", "-created_at")
+
+
+def get_reviewer_novel_by_id(user, novel_id):
+    queryset = (
+        Novel.objects.select_related("author", "category", "reviewer")
+        .annotate(chapter_count=Count("chapters", distinct=True))
+        .filter(id=novel_id)
+    )
+    if not is_admin_user(user):
+        queryset = queryset.filter(Q(audit_status=Novel.AuditStatus.PENDING) | Q(reviewer=user))
+    return queryset.first()
 
 
 def get_reviewer_audit_logs(params):

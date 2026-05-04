@@ -16,6 +16,7 @@ from .selectors import (
     get_public_chapters_for_novel,
     get_reviewer_chapter_by_id,
     get_reviewer_pending_chapters,
+    get_reviewer_reviewing_chapters,
 )
 from .serializers import (
     AdminChapterDetailSerializer,
@@ -203,11 +204,35 @@ class ReviewerPendingChapterListView(APIView):
         return success_response(paginator.get_paginated_data(serializer.data))
 
 
+class ReviewerReviewingChapterListView(APIView):
+    permission_classes = [IsReviewerOrAdmin]
+
+    def get(self, request):
+        query_serializer = AdminChapterPendingQuerySerializer(data=request.query_params)
+        query_serializer.is_valid(raise_exception=True)
+
+        paginator = PublicPageNumberPagination()
+        queryset = get_reviewer_reviewing_chapters(request.user, query_serializer.validated_data)
+        page = paginator.paginate_queryset(queryset, request, view=self)
+        serializer = AdminChapterListSerializer(page, many=True)
+        return success_response(paginator.get_paginated_data(serializer.data))
+
+
+class ReviewerChapterDetailView(APIView):
+    permission_classes = [IsReviewerOrAdmin]
+
+    def get(self, request, id):
+        chapter = get_reviewer_chapter_by_id(request.user, id)
+        if chapter is None:
+            raise NotFound("Chapter not found.")
+        return success_response(AdminChapterDetailSerializer(chapter).data)
+
+
 class ReviewerChapterClaimView(APIView):
     permission_classes = [IsReviewerOrAdmin]
 
     def post(self, request, id):
-        chapter = get_reviewer_chapter_by_id(id)
+        chapter = get_admin_chapter_by_id(id)
         if chapter is None:
             raise NotFound("Chapter not found.")
 
@@ -219,7 +244,7 @@ class ReviewerChapterApproveView(APIView):
     permission_classes = [IsReviewerOrAdmin]
 
     def post(self, request, id):
-        chapter = get_reviewer_chapter_by_id(id)
+        chapter = get_admin_chapter_by_id(id)
         if chapter is None:
             raise NotFound("Chapter not found.")
 
@@ -231,7 +256,7 @@ class ReviewerChapterRejectView(APIView):
     permission_classes = [IsReviewerOrAdmin]
 
     def post(self, request, id):
-        chapter = get_reviewer_chapter_by_id(id)
+        chapter = get_admin_chapter_by_id(id)
         if chapter is None:
             raise NotFound("Chapter not found.")
 
