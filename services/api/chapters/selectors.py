@@ -1,5 +1,8 @@
-from .models import Chapter
+from django.db.models import Q
+
 from users.permissions import is_admin_user
+
+from .models import Chapter
 
 
 def get_public_chapters_for_novel(novel_id):
@@ -58,3 +61,27 @@ def get_author_chapter_by_id(user, chapter_id):
     if not is_admin_user(user):
         queryset = queryset.filter(novel__author=user)
     return queryset.first()
+
+
+def get_admin_pending_chapters(params):
+    queryset = Chapter.objects.select_related("novel", "novel__author", "novel__category").filter(
+        audit_status=Chapter.AuditStatus.PENDING,
+    )
+
+    novel_id = params.get("novel_id")
+    if novel_id:
+        queryset = queryset.filter(novel_id=novel_id)
+
+    keyword = params.get("keyword")
+    if keyword:
+        queryset = queryset.filter(Q(title__icontains=keyword) | Q(novel__title__icontains=keyword))
+
+    return queryset.order_by("-updated_at", "-created_at")
+
+
+def get_admin_chapter_by_id(chapter_id):
+    return (
+        Chapter.objects.select_related("novel", "novel__author", "novel__category")
+        .filter(id=chapter_id)
+        .first()
+    )

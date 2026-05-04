@@ -1,12 +1,14 @@
 from rest_framework.exceptions import NotFound
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
-from users.permissions import IsAuthorOrAdmin
+from users.permissions import IsAuthorOrAdmin, IsStaffAdmin
 
 from common.pagination import PublicPageNumberPagination
 from common.response import success_response
 
 from .selectors import (
+    get_admin_novel_by_id,
+    get_admin_pending_novels,
     get_author_novel_by_id,
     get_author_novels,
     get_enabled_categories,
@@ -14,6 +16,11 @@ from .selectors import (
     get_public_novels,
 )
 from .serializers import (
+    AdminNovelDetailSerializer,
+    AdminNovelListSerializer,
+    AdminNovelPendingQuerySerializer,
+    AdminNovelRejectInputSerializer,
+    AdminNovelReviewSerializer,
     AuthorNovelCreateSerializer,
     AuthorNovelDetailSerializer,
     AuthorNovelListSerializer,
@@ -26,9 +33,11 @@ from .serializers import (
     NovelRatingSummarySerializer,
 )
 from .services import (
+    approve_novel_review,
     build_rating_summary,
     create_author_novel,
     delete_rating,
+    reject_novel_review,
     submit_novel_review,
     submit_or_update_rating,
     update_author_novel,
@@ -140,3 +149,57 @@ class AuthorNovelSubmitView(APIView):
 
         novel = submit_novel_review(novel)
         return success_response(AuthorNovelSubmitSerializer(novel).data)
+
+
+class AdminPendingNovelListView(APIView):
+    permission_classes = [IsStaffAdmin]
+
+    def get(self, request):
+        query_serializer = AdminNovelPendingQuerySerializer(data=request.query_params)
+        query_serializer.is_valid(raise_exception=True)
+
+        paginator = PublicPageNumberPagination()
+        queryset = get_admin_pending_novels(query_serializer.validated_data)
+        page = paginator.paginate_queryset(queryset, request, view=self)
+        serializer = AdminNovelListSerializer(page, many=True)
+        return success_response(paginator.get_paginated_data(serializer.data))
+
+
+class AdminNovelDetailView(APIView):
+    permission_classes = [IsStaffAdmin]
+
+    def get_object(self, id):
+        novel = get_admin_novel_by_id(id)
+        if novel is None:
+            raise NotFound("Novel not found.")
+        return novel
+
+    def get(self, request, id):
+        novel = self.get_object(id)
+        return success_response(AdminNovelDetailSerializer(novel).data)
+
+
+class AdminNovelApproveView(APIView):
+    permission_classes = [IsStaffAdmin]
+
+    def post(self, request, id):
+        novel = get_admin_novel_by_id(id)
+        if novel is None:
+            raise NotFound("Novel not found.")
+
+        novel = approve_novel_review(novel)
+        return success_response(AdminNovelReviewSerializer(novel).data)
+
+
+class AdminNovelRejectView(APIView):
+    permission_classes = [IsStaffAdmin]
+
+    def post(self, request, id):
+        novel = get_admin_novel_by_id(id)
+        if novel is None:
+            raise NotFound("Novel not found.")
+
+        serializer = AdminNovelRejectInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        novel = reject_novel_review(novel, serializer.validated_data.get("reason", ""))
+        return success_response(AdminNovelReviewSerializer(novel).data)

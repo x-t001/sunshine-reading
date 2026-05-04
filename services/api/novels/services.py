@@ -121,3 +121,20 @@ def submit_novel_review(novel):
     novel.audit_status = Novel.AuditStatus.PENDING
     novel.save(update_fields=["audit_status", "updated_at"])
     return novel
+
+
+@transaction.atomic
+def approve_novel_review(novel):
+    if novel.status == Novel.Status.REMOVED:
+        raise ValidationError({"status": ["Removed novels cannot be approved."]})
+
+    novel.audit_status = Novel.AuditStatus.APPROVED
+    novel.save(update_fields=["audit_status", "updated_at"])
+    return novel
+
+
+@transaction.atomic
+def reject_novel_review(novel, reason=""):
+    novel.audit_status = Novel.AuditStatus.REJECTED
+    novel.save(update_fields=["audit_status", "updated_at"])
+    return novel

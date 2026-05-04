@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
-from novels.serializers import NovelListSerializer
+from novels.models import Novel
+from novels.serializers import NovelAuthorSerializer, NovelListSerializer
 
 from .models import Chapter
 
@@ -90,3 +91,53 @@ class AuthorChapterSubmitSerializer(serializers.ModelSerializer):
     class Meta:
         model = Chapter
         fields = ("id", "status", "audit_status")
+
+
+class AdminChapterNovelSerializer(serializers.ModelSerializer):
+    author = NovelAuthorSerializer(read_only=True)
+
+    class Meta:
+        model = Novel
+        fields = ("id", "title", "author")
+
+
+class AdminChapterListSerializer(serializers.ModelSerializer):
+    novel = AdminChapterNovelSerializer(read_only=True)
+    price = serializers.DecimalField(max_digits=8, decimal_places=2)
+
+    class Meta:
+        model = Chapter
+        fields = (
+            "id",
+            "title",
+            "chapter_number",
+            "word_count",
+            "is_free",
+            "price",
+            "status",
+            "audit_status",
+            "published_at",
+            "created_at",
+            "updated_at",
+            "novel",
+        )
+
+
+class AdminChapterDetailSerializer(AdminChapterListSerializer):
+    class Meta(AdminChapterListSerializer.Meta):
+        fields = AdminChapterListSerializer.Meta.fields + ("content",)
+
+
+class AdminChapterReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Chapter
+        fields = ("id", "title", "status", "audit_status", "published_at", "updated_at")
+
+
+class AdminChapterRejectInputSerializer(serializers.Serializer):
+    reason = serializers.CharField(max_length=500, required=False, allow_blank=True)
+
+
+class AdminChapterPendingQuerySerializer(serializers.Serializer):
+    novel_id = serializers.IntegerField(min_value=1, required=False)
+    keyword = serializers.CharField(max_length=100, required=False, allow_blank=True)

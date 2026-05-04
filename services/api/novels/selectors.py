@@ -93,3 +93,26 @@ def get_author_novel_by_id(user, novel_id):
         queryset = queryset.filter(author=user)
     return queryset.first()
 
+
+def get_admin_pending_novels(params):
+    queryset = Novel.objects.select_related("author", "category").filter(audit_status=Novel.AuditStatus.PENDING)
+
+    keyword = params.get("keyword")
+    if keyword:
+        queryset = queryset.filter(
+            Q(title__icontains=keyword)
+            | Q(description__icontains=keyword)
+            | Q(author__username__icontains=keyword)
+            | Q(author__nickname__icontains=keyword)
+        )
+
+    return queryset.order_by("-updated_at", "-created_at")
+
+
+def get_admin_novel_by_id(novel_id):
+    return (
+        Novel.objects.select_related("author", "category")
+        .annotate(chapter_count=Count("chapters", distinct=True))
+        .filter(id=novel_id)
+        .first()
+    )

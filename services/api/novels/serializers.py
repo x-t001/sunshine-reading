@@ -130,6 +130,60 @@ class AuthorNovelSubmitSerializer(serializers.ModelSerializer):
         fields = ("id", "audit_status")
 
 
+class AdminNovelListSerializer(serializers.ModelSerializer):
+    author = NovelAuthorSerializer(read_only=True)
+    category = NovelCategorySerializer(read_only=True)
+    rating_score = serializers.DecimalField(max_digits=4, decimal_places=2)
+
+    class Meta:
+        model = Novel
+        fields = (
+            "id",
+            "title",
+            "cover",
+            "author",
+            "category",
+            "status",
+            "audit_status",
+            "word_count",
+            "view_count",
+            "collect_count",
+            "comment_count",
+            "rating_score",
+            "rating_count",
+            "latest_chapter_title",
+            "latest_chapter_updated_at",
+            "created_at",
+            "updated_at",
+        )
+
+
+class AdminNovelDetailSerializer(AdminNovelListSerializer):
+    chapter_count = serializers.SerializerMethodField()
+
+    class Meta(AdminNovelListSerializer.Meta):
+        fields = AdminNovelListSerializer.Meta.fields + ("description", "is_featured", "chapter_count")
+
+    def get_chapter_count(self, obj):
+        if hasattr(obj, "chapter_count"):
+            return obj.chapter_count
+        return obj.chapters.count()
+
+
+class AdminNovelReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Novel
+        fields = ("id", "title", "status", "audit_status", "updated_at")
+
+
+class AdminNovelRejectInputSerializer(serializers.Serializer):
+    reason = serializers.CharField(max_length=500, required=False, allow_blank=True)
+
+
+class AdminNovelPendingQuerySerializer(serializers.Serializer):
+    keyword = serializers.CharField(max_length=100, required=False, allow_blank=True)
+
+
 class NovelRatingSerializer(serializers.ModelSerializer):
     class Meta:
         model = NovelRating

@@ -7,19 +7,22 @@ from common.models import TimeStampedModel
 
 
 class Category(TimeStampedModel):
-    name = models.CharField(max_length=100)
-    slug = models.SlugField(max_length=120, unique=True)
+    name = models.CharField("分类名称", max_length=100)
+    slug = models.SlugField("分类标识", max_length=120, unique=True)
     parent = models.ForeignKey(
         "self",
+        verbose_name="父分类",
         null=True,
         blank=True,
         related_name="children",
         on_delete=models.SET_NULL,
     )
-    sort_order = models.PositiveIntegerField(default=0, db_index=True)
-    is_active = models.BooleanField(default=True, db_index=True)
+    sort_order = models.PositiveIntegerField("排序值", default=0, db_index=True)
+    is_active = models.BooleanField("是否启用", default=True, db_index=True)
 
     class Meta:
+        verbose_name = "分类"
+        verbose_name_plural = "分类管理"
         ordering = ["sort_order", "name"]
         indexes = [
             models.Index(fields=["parent", "sort_order"]),
@@ -32,60 +35,67 @@ class Category(TimeStampedModel):
 
 class Novel(TimeStampedModel):
     class Status(models.TextChoices):
-        SERIALIZING = "serializing", "Serializing"
-        COMPLETED = "completed", "Completed"
-        PAUSED = "paused", "Paused"
-        REMOVED = "removed", "Removed"
+        SERIALIZING = "serializing", "连载中"
+        COMPLETED = "completed", "已完结"
+        PAUSED = "paused", "暂停更新"
+        REMOVED = "removed", "已下架"
 
     class AuditStatus(models.TextChoices):
-        DRAFT = "draft", "Draft"
-        PENDING = "pending", "Pending"
-        APPROVED = "approved", "Approved"
-        REJECTED = "rejected", "Rejected"
+        DRAFT = "draft", "草稿"
+        PENDING = "pending", "待审核"
+        APPROVED = "approved", "已通过"
+        REJECTED = "rejected", "已拒绝"
 
-    title = models.CharField(max_length=255, db_index=True)
+    title = models.CharField("小说标题", max_length=255, db_index=True)
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
+        verbose_name="作者",
         related_name="novels",
         on_delete=models.PROTECT,
     )
     category = models.ForeignKey(
         Category,
+        verbose_name="分类",
         null=True,
         blank=True,
         related_name="novels",
         on_delete=models.SET_NULL,
     )
-    cover = models.URLField(max_length=500, blank=True)
-    description = models.TextField(blank=True)
+    cover = models.URLField("封面", max_length=500, blank=True)
+    description = models.TextField("简介", blank=True)
     status = models.CharField(
+        "连载状态",
         max_length=20,
         choices=Status.choices,
         default=Status.SERIALIZING,
         db_index=True,
     )
     audit_status = models.CharField(
+        "审核状态",
         max_length=20,
         choices=AuditStatus.choices,
         default=AuditStatus.DRAFT,
         db_index=True,
     )
-    word_count = models.PositiveIntegerField(default=0)
-    view_count = models.PositiveIntegerField(default=0, db_index=True)
-    collect_count = models.PositiveIntegerField(default=0)
-    comment_count = models.PositiveIntegerField(default=0)
+    word_count = models.PositiveIntegerField("字数", default=0)
+    view_count = models.PositiveIntegerField("阅读量", default=0, db_index=True)
+    collect_count = models.PositiveIntegerField("收藏数", default=0)
+    comment_count = models.PositiveIntegerField("评论数", default=0)
     rating_score = models.DecimalField(
+        "平均评分",
         max_digits=4,
         decimal_places=2,
         default=Decimal("0.00"),
         db_index=True,
     )
-    rating_count = models.PositiveIntegerField(default=0, db_index=True)
-    latest_chapter_title = models.CharField(max_length=255, blank=True)
-    latest_chapter_updated_at = models.DateTimeField(null=True, blank=True, db_index=True)
-    is_featured = models.BooleanField(default=False, db_index=True)
+    rating_count = models.PositiveIntegerField("评分人数", default=0, db_index=True)
+    latest_chapter_title = models.CharField("最新章节标题", max_length=255, blank=True)
+    latest_chapter_updated_at = models.DateTimeField("最新章节更新时间", null=True, blank=True, db_index=True)
+    is_featured = models.BooleanField("是否推荐", default=False, db_index=True)
 
     class Meta:
+        verbose_name = "小说"
+        verbose_name_plural = "小说管理"
         ordering = ["-latest_chapter_updated_at", "-created_at"]
         indexes = [
             models.Index(fields=["author", "status"]),
@@ -101,26 +111,30 @@ class Novel(TimeStampedModel):
 
 class NovelRating(TimeStampedModel):
     class Score(models.IntegerChoices):
-        ONE = 1, "1"
-        TWO = 2, "2"
-        THREE = 3, "3"
-        FOUR = 4, "4"
-        FIVE = 5, "5"
+        ONE = 1, "1 分"
+        TWO = 2, "2 分"
+        THREE = 3, "3 分"
+        FOUR = 4, "4 分"
+        FIVE = 5, "5 分"
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
+        verbose_name="用户",
         related_name="novel_ratings",
         on_delete=models.CASCADE,
     )
     novel = models.ForeignKey(
         Novel,
+        verbose_name="小说",
         related_name="ratings",
         on_delete=models.CASCADE,
     )
-    score = models.PositiveSmallIntegerField(choices=Score.choices, db_index=True)
-    comment = models.CharField(max_length=500, blank=True)
+    score = models.PositiveSmallIntegerField("评分", choices=Score.choices, db_index=True)
+    comment = models.CharField("短评", max_length=500, blank=True)
 
     class Meta:
+        verbose_name = "小说评分"
+        verbose_name_plural = "小说评分管理"
         constraints = [
             models.UniqueConstraint(
                 fields=["user", "novel"],

@@ -1,6 +1,10 @@
 from django.urls import path
 
 from .views import (
+    AdminNovelApproveView,
+    AdminNovelDetailView,
+    AdminNovelRejectView,
+    AdminPendingNovelListView,
     AuthorNovelDetailView,
     AuthorNovelListCreateView,
     AuthorNovelSubmitView,
@@ -22,4 +26,8 @@ urlpatterns = [
     path("author/novels/", AuthorNovelListCreateView.as_view(), name="author-novel-list-create"),
     path("author/novels/<int:id>/", AuthorNovelDetailView.as_view(), name="author-novel-detail"),
     path("author/novels/<int:id>/submit/", AuthorNovelSubmitView.as_view(), name="author-novel-submit"),
+    path("admin/novels/pending/", AdminPendingNovelListView.as_view(), name="admin-novel-pending-list"),
+    path("admin/novels/<int:id>/", AdminNovelDetailView.as_view(), name="admin-novel-detail"),
+    path("admin/novels/<int:id>/approve/", AdminNovelApproveView.as_view(), name="admin-novel-approve"),
+    path("admin/novels/<int:id>/reject/", AdminNovelRejectView.as_view(), name="admin-novel-reject"),
 ]

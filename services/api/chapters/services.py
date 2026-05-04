@@ -2,6 +2,7 @@ import re
 
 from django.db import transaction
 from django.db.models import Sum
+from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from novels.models import Novel
@@ -117,3 +118,24 @@ def delete_author_chapter(chapter):
     else:
         chapter.delete()
     recalculate_novel_chapter_stats(novel_id)
+
+
+@transaction.atomic
+def approve_chapter_review(chapter):
+    chapter.audit_status = Chapter.AuditStatus.APPROVED
+    chapter.status = Chapter.Status.PUBLISHED
+    if chapter.published_at is None:
+        chapter.published_at = timezone.now()
+    chapter.save(update_fields=["audit_status", "status", "published_at", "updated_at"])
+    recalculate_novel_chapter_stats(chapter.novel_id)
+    return chapter
+
+
+@transaction.atomic
+def reject_chapter_review(chapter, reason=""):
+    chapter.audit_status = Chapter.AuditStatus.REJECTED
+    if chapter.status == Chapter.Status.PUBLISHED:
+        chapter.status = Chapter.Status.HIDDEN
+    chapter.save(update_fields=["audit_status", "status", "updated_at"])
+    recalculate_novel_chapter_stats(chapter.novel_id)
+    return chapter

@@ -7,41 +7,46 @@ from common.models import TimeStampedModel
 
 class Chapter(TimeStampedModel):
     class Status(models.TextChoices):
-        DRAFT = "draft", "Draft"
-        PUBLISHED = "published", "Published"
-        HIDDEN = "hidden", "Hidden"
+        DRAFT = "draft", "草稿"
+        PUBLISHED = "published", "已发布"
+        HIDDEN = "hidden", "已隐藏"
 
     class AuditStatus(models.TextChoices):
-        PENDING = "pending", "Pending"
-        APPROVED = "approved", "Approved"
-        REJECTED = "rejected", "Rejected"
+        PENDING = "pending", "待审核"
+        APPROVED = "approved", "已通过"
+        REJECTED = "rejected", "已拒绝"
 
     novel = models.ForeignKey(
         "novels.Novel",
+        verbose_name="所属小说",
         related_name="chapters",
         on_delete=models.CASCADE,
     )
-    title = models.CharField(max_length=255, db_index=True)
-    chapter_number = models.PositiveIntegerField()
-    content = models.TextField()
-    word_count = models.PositiveIntegerField(default=0)
-    is_free = models.BooleanField(default=True, db_index=True)
-    price = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal("0.00"))
+    title = models.CharField("章节标题", max_length=255, db_index=True)
+    chapter_number = models.PositiveIntegerField("章节序号")
+    content = models.TextField("章节正文")
+    word_count = models.PositiveIntegerField("章节字数", default=0)
+    is_free = models.BooleanField("是否免费", default=True, db_index=True)
+    price = models.DecimalField("价格", max_digits=8, decimal_places=2, default=Decimal("0.00"))
     status = models.CharField(
+        "章节状态",
         max_length=20,
         choices=Status.choices,
         default=Status.DRAFT,
         db_index=True,
     )
     audit_status = models.CharField(
+        "审核状态",
         max_length=20,
         choices=AuditStatus.choices,
         default=AuditStatus.PENDING,
         db_index=True,
     )
-    published_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    published_at = models.DateTimeField("发布时间", null=True, blank=True, db_index=True)
 
     class Meta:
+        verbose_name = "章节"
+        verbose_name_plural = "章节管理"
         ordering = ["novel_id", "chapter_number"]
         constraints = [
             models.UniqueConstraint(
