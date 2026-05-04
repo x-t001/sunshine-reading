@@ -12,9 +12,11 @@ class Chapter(TimeStampedModel):
         HIDDEN = "hidden", "已隐藏"
 
     class AuditStatus(models.TextChoices):
+        DRAFT = "draft", "草稿"
         PENDING = "pending", "待审核"
+        REVIEWING = "reviewing", "审核中"
         APPROVED = "approved", "已通过"
-        REJECTED = "rejected", "已拒绝"
+        REJECTED = "rejected", "已驳回"
 
     novel = models.ForeignKey(
         "novels.Novel",
@@ -39,7 +41,7 @@ class Chapter(TimeStampedModel):
         "审核状态",
         max_length=20,
         choices=AuditStatus.choices,
-        default=AuditStatus.PENDING,
+        default=AuditStatus.DRAFT,
         db_index=True,
     )
     published_at = models.DateTimeField("发布时间", null=True, blank=True, db_index=True)

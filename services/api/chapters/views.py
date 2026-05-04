@@ -1,6 +1,6 @@
 from rest_framework.exceptions import NotFound
 from rest_framework.views import APIView
-from users.permissions import IsAuthorOrAdmin, IsStaffAdmin
+from users.permissions import IsAuthorOrAdmin, IsReviewerOrAdmin, IsStaffAdmin
 
 from common.pagination import PublicPageNumberPagination
 from common.response import success_response
@@ -14,6 +14,8 @@ from .selectors import (
     get_author_chapters_for_novel,
     get_public_chapter_by_id,
     get_public_chapters_for_novel,
+    get_reviewer_chapter_by_id,
+    get_reviewer_pending_chapters,
 )
 from .serializers import (
     AdminChapterDetailSerializer,
@@ -28,9 +30,11 @@ from .serializers import (
     AuthorChapterUpdateSerializer,
     ChapterCatalogSerializer,
     ChapterDetailSerializer,
+    ReviewerChapterRejectInputSerializer,
 )
 from .services import (
     approve_chapter_review,
+    claim_chapter_review,
     create_author_chapter,
     delete_author_chapter,
     reject_chapter_review,
@@ -163,7 +167,7 @@ class AdminChapterApproveView(APIView):
         if chapter is None:
             raise NotFound("Chapter not found.")
 
-        chapter = approve_chapter_review(chapter)
+        chapter = approve_chapter_review(chapter, reviewer=request.user)
         return success_response(AdminChapterReviewSerializer(chapter).data)
 
 
@@ -177,5 +181,66 @@ class AdminChapterRejectView(APIView):
 
         serializer = AdminChapterRejectInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        chapter = reject_chapter_review(chapter, serializer.validated_data.get("reason", ""))
+        chapter = reject_chapter_review(
+            chapter,
+            reviewer=request.user,
+            reason=serializer.validated_data.get("reason", ""),
+        )
+        return success_response(AdminChapterReviewSerializer(chapter).data)
+
+
+class ReviewerPendingChapterListView(APIView):
+    permission_classes = [IsReviewerOrAdmin]
+
+    def get(self, request):
+        query_serializer = AdminChapterPendingQuerySerializer(data=request.query_params)
+        query_serializer.is_valid(raise_exception=True)
+
+        paginator = PublicPageNumberPagination()
+        queryset = get_reviewer_pending_chapters(query_serializer.validated_data)
+        page = paginator.paginate_queryset(queryset, request, view=self)
+        serializer = AdminChapterListSerializer(page, many=True)
+        return success_response(paginator.get_paginated_data(serializer.data))
+
+
+class ReviewerChapterClaimView(APIView):
+    permission_classes = [IsReviewerOrAdmin]
+
+    def post(self, request, id):
+        chapter = get_reviewer_chapter_by_id(id)
+        if chapter is None:
+            raise NotFound("Chapter not found.")
+
+        chapter = claim_chapter_review(chapter, request.user)
+        return success_response(AdminChapterReviewSerializer(chapter).data)
+
+
+class ReviewerChapterApproveView(APIView):
+    permission_classes = [IsReviewerOrAdmin]
+
+    def post(self, request, id):
+        chapter = get_reviewer_chapter_by_id(id)
+        if chapter is None:
+            raise NotFound("Chapter not found.")
+
+        chapter = approve_chapter_review(chapter, reviewer=request.user)
+        return success_response(AdminChapterReviewSerializer(chapter).data)
+
+
+class ReviewerChapterRejectView(APIView):
+    permission_classes = [IsReviewerOrAdmin]
+
+    def post(self, request, id):
+        chapter = get_reviewer_chapter_by_id(id)
+        if chapter is None:
+            raise NotFound("Chapter not found.")
+
+        serializer = ReviewerChapterRejectInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        chapter = reject_chapter_review(
+            chapter,
+            reviewer=request.user,
+            reason=serializer.validated_data["reason"],
+            require_reason=True,
+        )
         return success_response(AdminChapterReviewSerializer(chapter).data)

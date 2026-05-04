@@ -5,9 +5,25 @@ from django.db.models import Sum
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
+from common.models import AuditLog
 from novels.models import Novel
 
 from .models import Chapter
+
+
+REVIEWABLE_AUDIT_STATUSES = (Chapter.AuditStatus.PENDING, Chapter.AuditStatus.REVIEWING)
+
+
+def _create_chapter_audit_log(chapter, action, from_status, to_status, reviewer=None, reason=""):
+    AuditLog.objects.create(
+        content_type=AuditLog.ContentType.CHAPTER,
+        object_id=chapter.id,
+        reviewer=reviewer,
+        action=action,
+        from_status=from_status or "",
+        to_status=to_status or "",
+        reason=reason or "",
+    )
 
 
 def calculate_word_count(content):
@@ -58,7 +74,7 @@ def create_author_chapter(novel, data):
         is_free=data.get("is_free", True),
         price=data.get("price", "0.00"),
         status=Chapter.Status.DRAFT,
-        audit_status=Chapter.AuditStatus.PENDING,
+        audit_status=Chapter.AuditStatus.DRAFT,
     )
     recalculate_novel_chapter_stats(novel.id)
     return chapter
@@ -101,11 +117,24 @@ def submit_chapter_review(chapter):
     if missing_fields:
         raise ValidationError({"fields": [f"Missing required fields: {', '.join(missing_fields)}."]})
 
-    if chapter.audit_status == Chapter.AuditStatus.APPROVED:
-        raise ValidationError({"audit_status": ["Chapter is already approved."]})
+    if chapter.audit_status not in (Chapter.AuditStatus.DRAFT, Chapter.AuditStatus.REJECTED):
+        if chapter.audit_status == Chapter.AuditStatus.PENDING:
+            raise ValidationError({"audit_status": ["Chapter is already pending review."]})
+        if chapter.audit_status == Chapter.AuditStatus.REVIEWING:
+            raise ValidationError({"audit_status": ["Chapter is already under review."]})
+        if chapter.audit_status == Chapter.AuditStatus.APPROVED:
+            raise ValidationError({"audit_status": ["Chapter is already approved."]})
+        raise ValidationError({"audit_status": ["Chapter cannot be submitted from current audit status."]})
 
+    from_status = chapter.audit_status
     chapter.audit_status = Chapter.AuditStatus.PENDING
     chapter.save(update_fields=["audit_status", "updated_at"])
+    _create_chapter_audit_log(
+        chapter=chapter,
+        action=AuditLog.Action.SUBMIT,
+        from_status=from_status,
+        to_status=Chapter.AuditStatus.PENDING,
+    )
     return chapter
 
 
@@ -121,21 +150,63 @@ def delete_author_chapter(chapter):
 
 
 @transaction.atomic
-def approve_chapter_review(chapter):
+def claim_chapter_review(chapter, reviewer):
+    if chapter.audit_status != Chapter.AuditStatus.PENDING:
+        raise ValidationError({"audit_status": ["Only pending chapters can be claimed."]})
+
+    from_status = chapter.audit_status
+    chapter.audit_status = Chapter.AuditStatus.REVIEWING
+    chapter.save(update_fields=["audit_status", "updated_at"])
+    _create_chapter_audit_log(
+        chapter=chapter,
+        action=AuditLog.Action.CLAIM,
+        from_status=from_status,
+        to_status=Chapter.AuditStatus.REVIEWING,
+        reviewer=reviewer,
+    )
+    return chapter
+
+
+@transaction.atomic
+def approve_chapter_review(chapter, reviewer=None):
+    if chapter.audit_status not in REVIEWABLE_AUDIT_STATUSES:
+        raise ValidationError({"audit_status": ["Only pending or reviewing chapters can be approved."]})
+
+    from_status = chapter.audit_status
     chapter.audit_status = Chapter.AuditStatus.APPROVED
     chapter.status = Chapter.Status.PUBLISHED
     if chapter.published_at is None:
         chapter.published_at = timezone.now()
     chapter.save(update_fields=["audit_status", "status", "published_at", "updated_at"])
     recalculate_novel_chapter_stats(chapter.novel_id)
+    _create_chapter_audit_log(
+        chapter=chapter,
+        action=AuditLog.Action.APPROVE,
+        from_status=from_status,
+        to_status=Chapter.AuditStatus.APPROVED,
+        reviewer=reviewer,
+    )
     return chapter
 
 
 @transaction.atomic
-def reject_chapter_review(chapter, reason=""):
+def reject_chapter_review(chapter, reviewer=None, reason="", require_reason=False):
+    if require_reason and not (reason or "").strip():
+        raise ValidationError({"reason": ["Reject reason is required."]})
+    if chapter.audit_status not in REVIEWABLE_AUDIT_STATUSES:
+        raise ValidationError({"audit_status": ["Only pending or reviewing chapters can be rejected."]})
+
+    from_status = chapter.audit_status
     chapter.audit_status = Chapter.AuditStatus.REJECTED
-    if chapter.status == Chapter.Status.PUBLISHED:
-        chapter.status = Chapter.Status.HIDDEN
+    chapter.status = Chapter.Status.DRAFT
     chapter.save(update_fields=["audit_status", "status", "updated_at"])
     recalculate_novel_chapter_stats(chapter.novel_id)
+    _create_chapter_audit_log(
+        chapter=chapter,
+        action=AuditLog.Action.REJECT,
+        from_status=from_status,
+        to_status=Chapter.AuditStatus.REJECTED,
+        reviewer=reviewer,
+        reason=reason,
+    )
     return chapter

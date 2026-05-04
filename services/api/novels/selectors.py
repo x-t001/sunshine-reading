@@ -1,6 +1,8 @@
 from django.db.models import Count, Q
 from users.permissions import is_admin_user
 
+from common.models import AuditLog
+
 from .models import Category, Novel, NovelRating
 
 
@@ -116,3 +118,25 @@ def get_admin_novel_by_id(novel_id):
         .filter(id=novel_id)
         .first()
     )
+
+
+def get_reviewer_pending_novels(params):
+    return get_admin_pending_novels(params)
+
+
+def get_reviewer_novel_by_id(novel_id):
+    return get_admin_novel_by_id(novel_id)
+
+
+def get_reviewer_audit_logs(params):
+    queryset = AuditLog.objects.select_related("reviewer")
+
+    content_type = params.get("content_type")
+    if content_type:
+        queryset = queryset.filter(content_type=content_type)
+
+    action = params.get("action")
+    if action:
+        queryset = queryset.filter(action=action)
+
+    return queryset.order_by("-created_at")

@@ -8,6 +8,7 @@ class User(AbstractUser, TimeStampedModel):
     class Role(models.TextChoices):
         READER = "reader", "读者"
         AUTHOR = "author", "作者"
+        REVIEWER = "reviewer", "审核员"
         ADMIN = "admin", "管理员"
 
     nickname = models.CharField("昵称", max_length=64, blank=True)

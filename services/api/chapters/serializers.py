@@ -141,3 +141,7 @@ class AdminChapterRejectInputSerializer(serializers.Serializer):
 class AdminChapterPendingQuerySerializer(serializers.Serializer):
     novel_id = serializers.IntegerField(min_value=1, required=False)
     keyword = serializers.CharField(max_length=100, required=False, allow_blank=True)
+
+
+class ReviewerChapterRejectInputSerializer(serializers.Serializer):
+    reason = serializers.CharField(max_length=1000, allow_blank=False, trim_whitespace=True)

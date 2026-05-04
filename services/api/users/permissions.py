@@ -25,6 +25,10 @@ def is_admin_user(user):
     )
 
 
+def is_reviewer_user(user):
+    return bool(user and user.is_authenticated and getattr(user, "role", "") == "reviewer")
+
+
 def is_author_user(user):
     return bool(user and user.is_authenticated and getattr(user, "role", "") == "author")
 
@@ -67,6 +71,20 @@ class IsStaffAdmin(BasePermission):
         if is_staff_admin_user(user):
             return True
         raise PermissionDenied("只有 staff 管理员可以访问审核接口。")
+
+
+class IsReviewerOrAdmin(BasePermission):
+    message = "Review permission is required."
+
+    def has_permission(self, request, view):
+        user = request.user
+        if not user or not user.is_authenticated:
+            raise NotAuthenticated("请先登录。")
+        if getattr(user, "is_banned", False):
+            raise PermissionDenied("用户已被封禁。")
+        if is_reviewer_user(user) or is_admin_user(user):
+            return True
+        raise PermissionDenied("只有审核员或管理员可以访问审核接口。")
 
 
 class IsNovelOwnerOrAdmin(BasePermission):

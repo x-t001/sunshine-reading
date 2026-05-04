@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from common.models import AuditLog
+
 from .models import Category, Novel, NovelRating
 
 
@@ -182,6 +184,33 @@ class AdminNovelRejectInputSerializer(serializers.Serializer):
 
 class AdminNovelPendingQuerySerializer(serializers.Serializer):
     keyword = serializers.CharField(max_length=100, required=False, allow_blank=True)
+
+
+class ReviewerRejectInputSerializer(serializers.Serializer):
+    reason = serializers.CharField(max_length=1000, allow_blank=False, trim_whitespace=True)
+
+
+class ReviewerAuditLogQuerySerializer(serializers.Serializer):
+    content_type = serializers.ChoiceField(choices=AuditLog.ContentType.choices, required=False)
+    action = serializers.ChoiceField(choices=AuditLog.Action.choices, required=False)
+
+
+class ReviewerAuditLogSerializer(serializers.ModelSerializer):
+    reviewer = NovelAuthorSerializer(read_only=True)
+
+    class Meta:
+        model = AuditLog
+        fields = (
+            "id",
+            "content_type",
+            "object_id",
+            "reviewer",
+            "action",
+            "from_status",
+            "to_status",
+            "reason",
+            "created_at",
+        )
 
 
 class NovelRatingSerializer(serializers.ModelSerializer):

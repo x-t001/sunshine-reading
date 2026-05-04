@@ -1,7 +1,7 @@
 from rest_framework.exceptions import NotFound
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
-from users.permissions import IsAuthorOrAdmin, IsStaffAdmin
+from users.permissions import IsAuthorOrAdmin, IsReviewerOrAdmin, IsStaffAdmin
 
 from common.pagination import PublicPageNumberPagination
 from common.response import success_response
@@ -14,6 +14,9 @@ from .selectors import (
     get_enabled_categories,
     get_public_novel_by_id,
     get_public_novels,
+    get_reviewer_audit_logs,
+    get_reviewer_novel_by_id,
+    get_reviewer_pending_novels,
 )
 from .serializers import (
     AdminNovelDetailSerializer,
@@ -31,10 +34,14 @@ from .serializers import (
     NovelListSerializer,
     NovelRatingInputSerializer,
     NovelRatingSummarySerializer,
+    ReviewerAuditLogQuerySerializer,
+    ReviewerAuditLogSerializer,
+    ReviewerRejectInputSerializer,
 )
 from .services import (
     approve_novel_review,
     build_rating_summary,
+    claim_novel_review,
     create_author_novel,
     delete_rating,
     reject_novel_review,
@@ -187,7 +194,7 @@ class AdminNovelApproveView(APIView):
         if novel is None:
             raise NotFound("Novel not found.")
 
-        novel = approve_novel_review(novel)
+        novel = approve_novel_review(novel, reviewer=request.user)
         return success_response(AdminNovelReviewSerializer(novel).data)
 
 
@@ -201,5 +208,80 @@ class AdminNovelRejectView(APIView):
 
         serializer = AdminNovelRejectInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        novel = reject_novel_review(novel, serializer.validated_data.get("reason", ""))
+        novel = reject_novel_review(
+            novel,
+            reviewer=request.user,
+            reason=serializer.validated_data.get("reason", ""),
+        )
         return success_response(AdminNovelReviewSerializer(novel).data)
+
+
+class ReviewerPendingNovelListView(APIView):
+    permission_classes = [IsReviewerOrAdmin]
+
+    def get(self, request):
+        query_serializer = AdminNovelPendingQuerySerializer(data=request.query_params)
+        query_serializer.is_valid(raise_exception=True)
+
+        paginator = PublicPageNumberPagination()
+        queryset = get_reviewer_pending_novels(query_serializer.validated_data)
+        page = paginator.paginate_queryset(queryset, request, view=self)
+        serializer = AdminNovelListSerializer(page, many=True)
+        return success_response(paginator.get_paginated_data(serializer.data))
+
+
+class ReviewerNovelClaimView(APIView):
+    permission_classes = [IsReviewerOrAdmin]
+
+    def post(self, request, id):
+        novel = get_reviewer_novel_by_id(id)
+        if novel is None:
+            raise NotFound("Novel not found.")
+
+        novel = claim_novel_review(novel, request.user)
+        return success_response(AdminNovelReviewSerializer(novel).data)
+
+
+class ReviewerNovelApproveView(APIView):
+    permission_classes = [IsReviewerOrAdmin]
+
+    def post(self, request, id):
+        novel = get_reviewer_novel_by_id(id)
+        if novel is None:
+            raise NotFound("Novel not found.")
+
+        novel = approve_novel_review(novel, reviewer=request.user)
+        return success_response(AdminNovelReviewSerializer(novel).data)
+
+
+class ReviewerNovelRejectView(APIView):
+    permission_classes = [IsReviewerOrAdmin]
+
+    def post(self, request, id):
+        novel = get_reviewer_novel_by_id(id)
+        if novel is None:
+            raise NotFound("Novel not found.")
+
+        serializer = ReviewerRejectInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        novel = reject_novel_review(
+            novel,
+            reviewer=request.user,
+            reason=serializer.validated_data["reason"],
+            require_reason=True,
+        )
+        return success_response(AdminNovelReviewSerializer(novel).data)
+
+
+class ReviewerAuditLogListView(APIView):
+    permission_classes = [IsReviewerOrAdmin]
+
+    def get(self, request):
+        query_serializer = ReviewerAuditLogQuerySerializer(data=request.query_params)
+        query_serializer.is_valid(raise_exception=True)
+
+        paginator = PublicPageNumberPagination()
+        queryset = get_reviewer_audit_logs(query_serializer.validated_data)
+        page = paginator.paginate_queryset(queryset, request, view=self)
+        serializer = ReviewerAuditLogSerializer(page, many=True)
+        return success_response(paginator.get_paginated_data(serializer.data))

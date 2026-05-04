@@ -85,3 +85,11 @@ def get_admin_chapter_by_id(chapter_id):
         .filter(id=chapter_id)
         .first()
     )
+
+
+def get_reviewer_pending_chapters(params):
+    return get_admin_pending_chapters(params)
+
+
+def get_reviewer_chapter_by_id(chapter_id):
+    return get_admin_chapter_by_id(chapter_id)

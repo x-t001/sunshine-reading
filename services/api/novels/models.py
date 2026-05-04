@@ -43,8 +43,9 @@ class Novel(TimeStampedModel):
     class AuditStatus(models.TextChoices):
         DRAFT = "draft", "草稿"
         PENDING = "pending", "待审核"
+        REVIEWING = "reviewing", "审核中"
         APPROVED = "approved", "已通过"
-        REJECTED = "rejected", "已拒绝"
+        REJECTED = "rejected", "已驳回"
 
     title = models.CharField("小说标题", max_length=255, db_index=True)
     author = models.ForeignKey(
