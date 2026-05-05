@@ -66,7 +66,7 @@ export function SiteHeader() {
           <Link href="/history">历史</Link>
           {canAccessAuthorCenter ? <Link href="/author">作者中心</Link> : null}
           {canAccessReviewerCenter ? <Link href="/reviewer">审核中心</Link> : null}
-          {canAccessAdminPanel ? <Link href="/admin">管理后台</Link> : null}
+          {canAccessAdminPanel ? <Link href="/admin">运营后台</Link> : null}
         </nav>
         <div className="ml-auto flex shrink-0 items-center gap-2 text-sm">
           {user ? (

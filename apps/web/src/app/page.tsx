@@ -44,7 +44,7 @@ export default async function HomePage() {
       </section>
 
       <section className="rounded-xl bg-white p-4 shadow-sm">
-        <SectionTitle title="分类入口" actionText="查看全部" />
+        <SectionTitle title="分类入口" actionText="查看全部" actionHref="/categories" />
         {categories.length === 0 ? (
           <p className="rounded-lg border border-dashed border-zinc-300 px-3 py-4 text-sm text-zinc-500">暂无分类。</p>
         ) : (
@@ -59,7 +59,7 @@ export default async function HomePage() {
       </section>
 
       <section>
-        <SectionTitle title="推荐小说" actionText="更多" />
+        <SectionTitle title="推荐小说" actionText="更多" actionHref="/novels" />
         {recommends.results.length === 0 ? (
           <p className="rounded-lg border border-dashed border-zinc-300 bg-white px-3 py-4 text-sm text-zinc-500">暂无推荐小说。</p>
         ) : (
@@ -72,7 +72,7 @@ export default async function HomePage() {
       </section>
 
       <section className="rounded-xl bg-white p-4 shadow-sm">
-        <SectionTitle title="排行榜入口" actionText="进入榜单" />
+        <SectionTitle title="排行榜入口" actionText="进入榜单" actionHref="/rankings" />
         <Link href="/rankings" className="text-sm text-emerald-600">
           {rankings.length > 0 ? rankings.map((item) => item.name).slice(0, 3).join("、") : "查看榜单"}
         </Link>
