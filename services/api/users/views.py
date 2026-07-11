@@ -142,5 +142,5 @@ class AdminUserUnbanView(APIView):
         if target_user is None:
             raise NotFound("用户不存在。")
 
-        target_user = unban_user(target_user)
+        target_user = unban_user(request.user, target_user)
         return success_response(AdminUserStatusSerializer(target_user).data, message="用户已解封。")

@@ -4,6 +4,22 @@ import { clearTokens, getAccessToken } from "@/lib/auth/token";
 const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000/api";
 const AUTH_EXPIRED_MESSAGE = "登录已过期，请重新登录。";
 
+function isLoopbackHostname(hostname: string): boolean {
+  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1" || hostname === "[::1]";
+}
+
+function usesLoopbackHost(url: string): boolean {
+  try {
+    return isLoopbackHostname(new URL(url).hostname);
+  } catch {
+    return false;
+  }
+}
+
+function formatUrlHostname(hostname: string): string {
+  return hostname.includes(":") && !hostname.startsWith("[") ? `[${hostname}]` : hostname;
+}
+
 export class ApiRequestError extends Error {
   constructor(
     message: string,
@@ -19,7 +35,18 @@ export type ApiRequestInit = RequestInit & {
 };
 
 export function getApiBaseUrl(): string {
-  return (process.env.NEXT_PUBLIC_API_BASE_URL || DEFAULT_API_BASE_URL).replace(/\/+$/, "");
+  const configuredBaseUrl = (process.env.NEXT_PUBLIC_API_BASE_URL || DEFAULT_API_BASE_URL).trim().replace(/\/+$/, "");
+
+  if (typeof window === "undefined") {
+    return configuredBaseUrl;
+  }
+
+  const pageHostname = window.location.hostname;
+  if (!isLoopbackHostname(pageHostname) && usesLoopbackHost(configuredBaseUrl)) {
+    return `${window.location.protocol}//${formatUrlHostname(pageHostname)}:8000/api`;
+  }
+
+  return configuredBaseUrl;
 }
 
 export function buildQueryString(params: Record<string, unknown>): string {
@@ -52,6 +79,7 @@ export async function apiRequest<T>(path: string, init: ApiRequestInit = {}): Pr
   if (requestInit.body && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
+
   const accessToken = getAccessToken();
   if (auth && accessToken && !headers.has("Authorization")) {
     headers.set("Authorization", `Bearer ${accessToken}`);
@@ -80,7 +108,7 @@ export async function apiRequest<T>(path: string, init: ApiRequestInit = {}): Pr
 
   if (auth && response.status === 401) {
     clearTokens();
-    throw new ApiRequestError(AUTH_EXPIRED_MESSAGE, response.status);
+    throw new ApiRequestError(payload.message || AUTH_EXPIRED_MESSAGE, response.status);
   }
 
   if (!response.ok) {

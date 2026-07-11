@@ -112,5 +112,5 @@ class AdminCommentStatusView(APIView):
 
         serializer = AdminCommentStatusUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        comment = update_admin_comment_status(comment, serializer.validated_data["status"])
+        comment = update_admin_comment_status(comment, serializer.validated_data["status"], actor=request.user)
         return success_response(AdminCommentSerializer(comment).data)

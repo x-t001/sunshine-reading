@@ -17,7 +17,7 @@ export type NovelCategory = {
 };
 
 export type NovelStatus = "serializing" | "completed" | "paused" | "removed";
-export type NovelAuditStatus = "draft" | "pending" | "approved" | "rejected";
+export type NovelAuditStatus = "draft" | "pending" | "reviewing" | "approved" | "rejected";
 
 export type NovelListItem = {
   id: number;

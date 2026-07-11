@@ -18,7 +18,8 @@ const statusLabels: Record<AuthorChapterStatus, string> = {
 };
 
 const auditStatusLabels: Record<AuthorChapterAuditStatus, string> = {
-  pending: "审核中",
+  pending: "待审核",
+  reviewing: "审核中",
   approved: "已通过",
   rejected: "已拒绝",
 };

@@ -1,5 +1,6 @@
 from django.db.models import Q
 
+from common.models import AuditLog
 from users.permissions import is_admin_user
 
 from .models import Chapter
@@ -61,6 +62,14 @@ def get_author_chapter_by_id(user, chapter_id):
     if not is_admin_user(user):
         queryset = queryset.filter(novel__author=user)
     return queryset.first()
+
+
+def get_author_chapter_audit_logs(chapter_id):
+    return (
+        AuditLog.objects.select_related("reviewer")
+        .filter(content_type=AuditLog.ContentType.CHAPTER, object_id=chapter_id)
+        .order_by("-created_at")
+    )
 
 
 def get_admin_pending_chapters(params):

@@ -7,9 +7,12 @@ from common.pagination import PublicPageNumberPagination
 from common.response import success_response
 
 from .selectors import (
+    get_admin_categories,
+    get_admin_category_by_id,
     get_admin_novel_by_id,
     get_admin_novels,
     get_admin_pending_novels,
+    get_author_novel_audit_logs,
     get_author_novel_by_id,
     get_author_novels,
     get_enabled_categories,
@@ -21,6 +24,11 @@ from .selectors import (
     get_reviewer_reviewing_novels,
 )
 from .serializers import (
+    AdminCategoryCreateSerializer,
+    AdminCategoryQuerySerializer,
+    AdminCategorySerializer,
+    AdminCategoryStatusUpdateSerializer,
+    AdminCategoryUpdateSerializer,
     AdminNovelDetailSerializer,
     AdminNovelFeaturedUpdateSerializer,
     AdminNovelListSerializer,
@@ -49,11 +57,14 @@ from .services import (
     approve_novel_review,
     build_rating_summary,
     claim_novel_review,
+    create_admin_category,
     create_author_novel,
     delete_rating,
     reject_novel_review,
     submit_novel_review,
     submit_or_update_rating,
+    update_admin_category,
+    update_admin_category_status,
     update_admin_novel_featured,
     update_admin_novel_status,
     update_author_novel,
@@ -64,6 +75,70 @@ class CategoryListView(APIView):
     def get(self, request):
         serializer = CategorySerializer(get_enabled_categories(), many=True)
         return success_response(serializer.data)
+
+
+class AdminCategoryListCreateView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        query_serializer = AdminCategoryQuerySerializer(data=request.query_params)
+        query_serializer.is_valid(raise_exception=True)
+
+        paginator = PublicPageNumberPagination()
+        queryset = get_admin_categories(query_serializer.validated_data)
+        page = paginator.paginate_queryset(queryset, request, view=self)
+        serializer = AdminCategorySerializer(page, many=True)
+        return success_response(paginator.get_paginated_data(serializer.data))
+
+    def post(self, request):
+        serializer = AdminCategoryCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        category = create_admin_category(serializer.validated_data, actor=request.user)
+        category = get_admin_category_by_id(category.id)
+        return success_response(AdminCategorySerializer(category).data)
+
+
+class AdminCategoryDetailView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get_object(self, id):
+        category = get_admin_category_by_id(id)
+        if category is None:
+            raise NotFound("Category not found.")
+        return category
+
+    def get(self, request, id):
+        category = self.get_object(id)
+        return success_response(AdminCategorySerializer(category).data)
+
+    def patch(self, request, id):
+        category = self.get_object(id)
+        serializer = AdminCategoryUpdateSerializer(
+            data=request.data,
+            context={"category": category},
+        )
+        serializer.is_valid(raise_exception=True)
+
+        category = update_admin_category(category, serializer.validated_data, actor=request.user)
+        category = get_admin_category_by_id(category.id)
+        return success_response(AdminCategorySerializer(category).data)
+
+
+class AdminCategoryStatusView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def patch(self, request, id):
+        category = get_admin_category_by_id(id)
+        if category is None:
+            raise NotFound("Category not found.")
+
+        serializer = AdminCategoryStatusUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        category = update_admin_category_status(category, serializer.validated_data["is_active"], actor=request.user)
+        category = get_admin_category_by_id(category.id)
+        return success_response(AdminCategorySerializer(category).data)
 
 
 class NovelListView(APIView):
@@ -145,14 +220,16 @@ class AuthorNovelDetailView(APIView):
 
     def get(self, request, id):
         novel = self.get_object(request, id)
-        return success_response(AuthorNovelDetailSerializer(novel).data)
+        audit_logs = get_author_novel_audit_logs(novel.id)
+        return success_response(AuthorNovelDetailSerializer(novel, context={"audit_logs": audit_logs}).data)
 
     def patch(self, request, id):
         novel = self.get_object(request, id)
         serializer = AuthorNovelUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         novel = update_author_novel(novel, serializer.validated_data)
-        return success_response(AuthorNovelDetailSerializer(novel).data)
+        audit_logs = get_author_novel_audit_logs(novel.id)
+        return success_response(AuthorNovelDetailSerializer(novel, context={"audit_logs": audit_logs}).data)
 
 
 class AuthorNovelSubmitView(APIView):
@@ -219,7 +296,7 @@ class AdminNovelStatusView(APIView):
 
         serializer = AdminNovelStatusUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        novel = update_admin_novel_status(novel, serializer.validated_data["status"])
+        novel = update_admin_novel_status(novel, serializer.validated_data["status"], actor=request.user)
         return success_response(AdminNovelManagementDetailSerializer(novel).data)
 
 
@@ -233,7 +310,7 @@ class AdminNovelFeaturedView(APIView):
 
         serializer = AdminNovelFeaturedUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        novel = update_admin_novel_featured(novel, serializer.validated_data["is_featured"])
+        novel = update_admin_novel_featured(novel, serializer.validated_data["is_featured"], actor=request.user)
         return success_response(AdminNovelManagementDetailSerializer(novel).data)
 
 

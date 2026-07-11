@@ -5,22 +5,17 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { CommentList } from "@/components/CommentList";
+import { NovelAiChat } from "@/components/NovelAiChat";
 import { RatingPanel } from "@/components/RatingPanel";
-import { getNovelChapters } from "@/lib/api/chapters";
 import { addToBookshelf, checkInBookshelf } from "@/lib/api/bookshelf";
+import { getNovelChapters } from "@/lib/api/chapters";
 import { getNovelDetail } from "@/lib/api/novels";
 import { ApiRequestError, getApiErrorMessage } from "@/lib/api/request";
 import { clearTokens, getAccessToken } from "@/lib/auth/token";
+import { getNovelCoverUrl } from "@/lib/utils/cover";
 import { formatDateLabel, formatWordCount } from "@/lib/utils/format";
 import type { ChapterCatalogItem } from "@/types/chapter";
 import type { NovelDetail } from "@/types/novel";
-
-function getCoverUrl(id: number, cover: string): string {
-  if (cover.startsWith("https://picsum.photos/")) {
-    return cover;
-  }
-  return `https://picsum.photos/seed/sunshine-${id}/240/320`;
-}
 
 function readRouteParam(value: string | string[] | undefined): string {
   return Array.isArray(value) ? value[0] : value || "";
@@ -98,15 +93,16 @@ export default function NovelDetailPage() {
           setInBookshelf(result.in_bookshelf);
         }
       } catch (checkError) {
-        if (active) {
-          if (isUnauthorizedError(checkError)) {
-            clearTokens();
-            setInBookshelf(null);
-            return;
-          }
-          setBookshelfError(getApiErrorMessage(checkError));
-          setInBookshelf(null);
+        if (!active) {
+          return;
         }
+        if (isUnauthorizedError(checkError)) {
+          clearTokens();
+          setInBookshelf(null);
+          return;
+        }
+        setBookshelfError(getApiErrorMessage(checkError));
+        setInBookshelf(null);
       }
     })();
 
@@ -116,7 +112,7 @@ export default function NovelDetailPage() {
   }, [novel]);
 
   const firstChapter = chapters[0];
-  const cover = useMemo(() => (novel ? getCoverUrl(novel.id, novel.cover) : ""), [novel]);
+  const cover = useMemo(() => (novel ? getNovelCoverUrl(novel.cover) : ""), [novel]);
 
   async function handleAddToBookshelf() {
     if (!novel) {
@@ -178,9 +174,7 @@ export default function NovelDetailPage() {
             <p className="text-sm text-zinc-600">分类：{novel.category?.name ?? "未分类"}</p>
             <p className="text-sm text-zinc-600">字数：{formatWordCount(novel.word_count)}</p>
             <p className="text-sm text-zinc-600">状态：{novel.status}</p>
-            <p className="text-sm text-zinc-600">
-              更新：{formatDateLabel(novel.latest_chapter_updated_at || novel.updated_at)}
-            </p>
+            <p className="text-sm text-zinc-600">更新：{formatDateLabel(novel.latest_chapter_updated_at || novel.updated_at)}</p>
           </div>
         </div>
 
@@ -218,6 +212,13 @@ export default function NovelDetailPage() {
         {bookshelfError ? <p className="mt-3 text-sm text-red-600">{bookshelfError}</p> : null}
       </section>
 
+      <NovelAiChat
+        novelTitle={novel.title}
+        novelDescription={novel.description}
+        authorName={novel.author.nickname || novel.author.username}
+        categoryName={novel.category?.name}
+      />
+
       <RatingPanel novelId={novel.id} />
 
       <section className="rounded-xl bg-white p-4 shadow-sm">
@@ -234,8 +235,10 @@ export default function NovelDetailPage() {
                   href={`/novels/${novel.id}/chapters/${chapter.id}`}
                   className="flex items-center justify-between rounded-lg border border-zinc-200 px-3 py-2 text-sm"
                 >
-                  <span className="line-clamp-1">{chapter.title}</span>
-                  <span className="shrink-0 text-xs text-zinc-500">{formatWordCount(chapter.word_count)}</span>
+                  <span>
+                    第{chapter.chapter_number}章 {chapter.title}
+                  </span>
+                  <span className="text-xs text-zinc-500">{chapter.word_count}字</span>
                 </Link>
               </li>
             ))}

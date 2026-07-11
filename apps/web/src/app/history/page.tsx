@@ -5,15 +5,16 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getReadingHistory } from "@/lib/api/reading-history";
 import { getApiErrorMessage } from "@/lib/api/request";
+import { getNovelCoverUrl } from "@/lib/utils/cover";
 import { formatDateLabel } from "@/lib/utils/format";
 import { useAuth } from "@/hooks/useAuth";
 import type { ReadingHistoryItem } from "@/types/reading-history";
 
-function coverUrl(item: ReadingHistoryItem): string {
-  if (item.novel.cover.startsWith("https://picsum.photos/")) {
-    return item.novel.cover;
+function formatProgress(value: number): string {
+  if (!Number.isFinite(value)) {
+    return "暂无";
   }
-  return `https://picsum.photos/seed/sunshine-${item.novel.id}/240/320`;
+  return `${Math.max(0, Math.min(100, Math.round(value)))}%`;
 }
 
 export default function HistoryPage() {
@@ -92,7 +93,7 @@ export default function HistoryPage() {
         {items.map((item) => (
           <article key={item.id} className="flex gap-3 rounded-xl border border-zinc-200 bg-white p-3 shadow-sm">
             <Image
-              src={coverUrl(item)}
+              src={getNovelCoverUrl(item.novel.cover)}
               alt={item.novel.title}
               width={64}
               height={88}
@@ -106,7 +107,7 @@ export default function HistoryPage() {
                 {item.chapter.title} · 第 {item.chapter.chapter_number} 章
               </p>
               <p className="mt-1 text-xs text-zinc-500">
-                位置 {item.reading_position} · {formatDateLabel(item.read_at)}
+                进度 {formatProgress(item.reading_position)} · {formatDateLabel(item.read_at)}
               </p>
               <Link
                 href={`/novels/${item.novel.id}/chapters/${item.chapter.id}`}

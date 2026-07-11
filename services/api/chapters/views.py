@@ -11,6 +11,7 @@ from .selectors import (
     get_admin_chapter_by_id,
     get_admin_chapters,
     get_admin_pending_chapters,
+    get_author_chapter_audit_logs,
     get_author_chapter_by_id,
     get_author_chapters_for_novel,
     get_public_chapter_by_id,
@@ -111,14 +112,16 @@ class AuthorChapterDetailView(APIView):
 
     def get(self, request, id):
         chapter = self.get_object(request, id)
-        return success_response(AuthorChapterDetailSerializer(chapter).data)
+        audit_logs = get_author_chapter_audit_logs(chapter.id)
+        return success_response(AuthorChapterDetailSerializer(chapter, context={"audit_logs": audit_logs}).data)
 
     def patch(self, request, id):
         chapter = self.get_object(request, id)
         serializer = AuthorChapterUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         chapter = update_author_chapter(chapter, serializer.validated_data)
-        return success_response(AuthorChapterDetailSerializer(chapter).data)
+        audit_logs = get_author_chapter_audit_logs(chapter.id)
+        return success_response(AuthorChapterDetailSerializer(chapter, context={"audit_logs": audit_logs}).data)
 
     def delete(self, request, id):
         chapter = self.get_object(request, id)
@@ -190,7 +193,7 @@ class AdminChapterStatusView(APIView):
 
         serializer = AdminChapterStatusUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        chapter = update_admin_chapter_status(chapter, serializer.validated_data["status"])
+        chapter = update_admin_chapter_status(chapter, serializer.validated_data["status"], actor=request.user)
         return success_response(AdminChapterManagementDetailSerializer(chapter).data)
 
 

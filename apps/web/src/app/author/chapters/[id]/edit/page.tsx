@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { AuthorAuditHistory } from "@/components/AuthorAuditHistory";
 import { AuthorLayout } from "@/components/AuthorLayout";
 import { ChapterForm } from "@/components/ChapterForm";
 import { getAuthorChapterDetail, submitAuthorChapter, updateAuthorChapter } from "@/lib/api/author";
@@ -16,7 +17,8 @@ const statusLabels: Record<AuthorChapterStatus, string> = {
 };
 
 const auditStatusLabels: Record<AuthorChapterAuditStatus, string> = {
-  pending: "审核中",
+  pending: "待审核",
+  reviewing: "审核中",
   approved: "已通过",
   rejected: "已拒绝",
 };
@@ -73,7 +75,7 @@ function EditAuthorChapterContent() {
 
   async function handleSave(payload: UpdateAuthorChapterPayload) {
     if (!id) {
-      return;
+      return false;
     }
     setSaving(true);
     setError(null);
@@ -82,8 +84,10 @@ function EditAuthorChapterContent() {
       const nextChapter = await updateAuthorChapter(id, payload);
       setChapter(nextChapter);
       setNotice("章节已保存。");
+      return true;
     } catch (updateError) {
       setError(getApiErrorMessage(updateError));
+      return false;
     } finally {
       setSaving(false);
     }
@@ -131,7 +135,12 @@ function EditAuthorChapterContent() {
           <button
             className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white disabled:bg-zinc-300"
             type="button"
-            disabled={submitting || chapter.audit_status === "approved"}
+            disabled={
+              submitting ||
+              chapter.audit_status === "pending" ||
+              chapter.audit_status === "reviewing" ||
+              chapter.audit_status === "approved"
+            }
             onClick={() => void handleSubmitReview()}
           >
             {submitting ? "提交中..." : "提交审核"}
@@ -142,7 +151,16 @@ function EditAuthorChapterContent() {
       {notice ? <p className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{notice}</p> : null}
       {error ? <p className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
 
-      <ChapterForm key={chapter.id} initialChapter={chapter} submitLabel="保存章节" submitting={saving} onSubmit={handleSave} />
+      <AuthorAuditHistory logs={chapter.audit_logs} currentStatus={chapter.audit_status} />
+
+      <ChapterForm
+        key={chapter.id}
+        draftStorageKey={`sunshine-reading:author-chapter:edit:${chapter.id}`}
+        initialChapter={chapter}
+        submitLabel="保存章节"
+        submitting={saving}
+        onSubmit={handleSave}
+      />
     </div>
   );
 }

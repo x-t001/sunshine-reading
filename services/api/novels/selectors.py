@@ -10,6 +10,38 @@ def get_enabled_categories():
     return Category.objects.filter(is_active=True).order_by("sort_order", "id")
 
 
+def get_admin_categories(params):
+    queryset = Category.objects.select_related("parent").annotate(
+        children_count=Count("children", distinct=True),
+        novel_count=Count("novels", distinct=True),
+    )
+
+    keyword = params.get("keyword")
+    if keyword:
+        queryset = queryset.filter(Q(name__icontains=keyword) | Q(slug__icontains=keyword))
+
+    if "is_active" in params:
+        queryset = queryset.filter(is_active=params["is_active"])
+
+    parent_id = params.get("parent_id")
+    if parent_id:
+        queryset = queryset.filter(parent_id=parent_id)
+
+    return queryset.order_by("sort_order", "id")
+
+
+def get_admin_category_by_id(category_id):
+    return (
+        Category.objects.select_related("parent")
+        .annotate(
+            children_count=Count("children", distinct=True),
+            novel_count=Count("novels", distinct=True),
+        )
+        .filter(id=category_id)
+        .first()
+    )
+
+
 def get_public_novels(params):
     queryset = (
         Novel.objects.select_related("author", "category")
@@ -94,6 +126,14 @@ def get_author_novel_by_id(user, novel_id):
     if not is_admin_user(user):
         queryset = queryset.filter(author=user)
     return queryset.first()
+
+
+def get_author_novel_audit_logs(novel_id):
+    return (
+        AuditLog.objects.select_related("reviewer")
+        .filter(content_type=AuditLog.ContentType.NOVEL, object_id=novel_id)
+        .order_by("-created_at")
+    )
 
 
 def get_admin_pending_novels(params):

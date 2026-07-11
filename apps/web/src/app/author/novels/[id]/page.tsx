@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { AuthorAuditHistory } from "@/components/AuthorAuditHistory";
 import { AuthorLayout } from "@/components/AuthorLayout";
 import { getAuthorNovelDetail, submitAuthorNovel } from "@/lib/api/author";
 import { getApiErrorMessage } from "@/lib/api/request";
@@ -19,7 +20,8 @@ const statusLabels: Record<NovelStatus, string> = {
 
 const auditStatusLabels: Record<NovelAuditStatus, string> = {
   draft: "草稿",
-  pending: "审核中",
+  pending: "待审核",
+  reviewing: "审核中",
   approved: "已通过",
   rejected: "已拒绝",
 };
@@ -127,7 +129,12 @@ function AuthorNovelDetailContent() {
             <button
               className="rounded-lg bg-emerald-600 px-3 py-2 text-white disabled:bg-zinc-300"
               type="button"
-              disabled={submitting || novel.audit_status === "pending" || novel.audit_status === "approved"}
+              disabled={
+                submitting ||
+                novel.audit_status === "pending" ||
+                novel.audit_status === "reviewing" ||
+                novel.audit_status === "approved"
+              }
               onClick={() => void handleSubmitReview()}
             >
               {submitting ? "提交中..." : "提交审核"}
@@ -135,6 +142,8 @@ function AuthorNovelDetailContent() {
           </div>
         </div>
       </section>
+
+      <AuthorAuditHistory logs={novel.audit_logs} currentStatus={novel.audit_status} />
 
       <section className="grid gap-3 md:grid-cols-3">
         <StatCard label="字数" value={formatWordCount(novel.word_count)} />

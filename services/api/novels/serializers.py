@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from common.models import AuditLog
+from common.serializers import AuditLogSerializer
 
 from .models import Category, Novel, NovelRating
 
@@ -11,6 +12,87 @@ class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = ("id", "name", "slug", "parent", "sort_order")
+
+
+class AdminCategoryParentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ("id", "name", "slug")
+
+
+class AdminCategorySerializer(serializers.ModelSerializer):
+    parent = AdminCategoryParentSerializer(read_only=True)
+    parent_id = serializers.IntegerField(read_only=True, allow_null=True)
+    parent_name = serializers.CharField(source="parent.name", read_only=True, allow_null=True)
+    children_count = serializers.IntegerField(read_only=True)
+    novel_count = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Category
+        fields = (
+            "id",
+            "name",
+            "slug",
+            "parent",
+            "parent_id",
+            "parent_name",
+            "sort_order",
+            "is_active",
+            "children_count",
+            "novel_count",
+            "created_at",
+            "updated_at",
+        )
+
+
+class AdminCategoryQuerySerializer(serializers.Serializer):
+    keyword = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    is_active = serializers.BooleanField(required=False)
+    parent_id = serializers.IntegerField(min_value=1, required=False)
+
+
+class AdminCategoryCreateSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=100)
+    slug = serializers.SlugField(max_length=120)
+    parent_id = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.all(),
+        source="parent",
+        required=False,
+        allow_null=True,
+    )
+    sort_order = serializers.IntegerField(min_value=0, required=False, default=0)
+    is_active = serializers.BooleanField(required=False, default=True)
+
+    def validate_slug(self, value):
+        if Category.objects.filter(slug=value).exists():
+            raise serializers.ValidationError("Category slug already exists.")
+        return value
+
+
+class AdminCategoryUpdateSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=100, required=False)
+    slug = serializers.SlugField(max_length=120, required=False)
+    parent_id = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.all(),
+        source="parent",
+        required=False,
+        allow_null=True,
+    )
+    sort_order = serializers.IntegerField(min_value=0, required=False)
+    is_active = serializers.BooleanField(required=False)
+
+    def validate_slug(self, value):
+        category = self.context.get("category")
+        queryset = Category.objects.filter(slug=value)
+        if category is not None:
+            queryset = queryset.exclude(id=category.id)
+        if queryset.exists():
+            raise serializers.ValidationError("Category slug already exists.")
+        return value
+
+
+class AdminCategoryStatusUpdateSerializer(serializers.Serializer):
+    is_active = serializers.BooleanField()
 
 
 class NovelAuthorSerializer(serializers.Serializer):
@@ -88,14 +170,18 @@ class AuthorNovelListSerializer(serializers.ModelSerializer):
 class AuthorNovelDetailSerializer(AuthorNovelListSerializer):
     author = NovelAuthorSerializer(read_only=True)
     chapter_count = serializers.SerializerMethodField()
+    audit_logs = serializers.SerializerMethodField()
 
     class Meta(AuthorNovelListSerializer.Meta):
-        fields = AuthorNovelListSerializer.Meta.fields + ("author", "description", "chapter_count")
+        fields = AuthorNovelListSerializer.Meta.fields + ("author", "description", "chapter_count", "audit_logs")
 
     def get_chapter_count(self, obj):
         if hasattr(obj, "chapter_count"):
             return obj.chapter_count
         return obj.chapters.count()
+
+    def get_audit_logs(self, obj):
+        return AuditLogSerializer(self.context.get("audit_logs", []), many=True).data
 
 
 class AuthorNovelCreateSerializer(serializers.Serializer):

@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { categories } from "@/mocks/categories";
+import { getNovelCoverUrl } from "@/lib/utils/cover";
 import { formatDateLabel, formatWordCount } from "@/lib/utils/format";
 import { Novel, NovelListItem } from "@/types/novel";
 
@@ -8,14 +9,6 @@ type NovelCardData = Novel | NovelListItem;
 
 function isApiNovel(novel: NovelCardData): novel is NovelListItem {
   return typeof novel.id === "number";
-}
-
-function getCoverUrl(novel: NovelCardData): string {
-  const id = String(novel.id);
-  if (novel.cover.startsWith("https://picsum.photos/")) {
-    return novel.cover;
-  }
-  return `https://picsum.photos/seed/sunshine-${id}/240/320`;
 }
 
 export function NovelCard({ novel, priorityCover = false }: { novel: NovelCardData; priorityCover?: boolean }) {
@@ -30,12 +23,12 @@ export function NovelCard({ novel, priorityCover = false }: { novel: NovelCardDa
   return (
     <Link href={`/novels/${id}`} className="flex gap-3 rounded-xl border border-zinc-200 bg-white p-3">
       <Image
-        src={getCoverUrl(novel)}
+        src={getNovelCoverUrl(novel.cover)}
         alt={novel.title}
         width={72}
         height={96}
         priority={priorityCover}
-        className="h-24 w-18 rounded-md object-cover"
+        className="h-24 w-[72px] rounded-md object-cover"
       />
       <div className="min-w-0 flex-1">
         <h3 className="line-clamp-1 text-sm font-semibold text-zinc-900">{novel.title}</h3>

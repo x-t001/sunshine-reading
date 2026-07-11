@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from common.serializers import AuditLogSerializer
 from novels.models import Novel
 from novels.serializers import NovelAuthorSerializer, NovelListSerializer
 
@@ -65,9 +66,13 @@ class AuthorChapterListSerializer(serializers.ModelSerializer):
 class AuthorChapterDetailSerializer(AuthorChapterListSerializer):
     novel_id = serializers.IntegerField(source="novel.id", read_only=True)
     novel_title = serializers.CharField(source="novel.title", read_only=True)
+    audit_logs = serializers.SerializerMethodField()
 
     class Meta(AuthorChapterListSerializer.Meta):
-        fields = AuthorChapterListSerializer.Meta.fields + ("novel_id", "novel_title", "content")
+        fields = AuthorChapterListSerializer.Meta.fields + ("novel_id", "novel_title", "content", "audit_logs")
+
+    def get_audit_logs(self, obj):
+        return AuditLogSerializer(self.context.get("audit_logs", []), many=True).data
 
 
 class AuthorChapterCreateSerializer(serializers.Serializer):

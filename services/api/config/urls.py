@@ -10,4 +10,5 @@ urlpatterns = [
     path("api/", include("users.urls")),
     path("api/", include("bookshelf.urls")),
     path("api/", include("comments.urls")),
+    path("api/", include("video_generation.urls")),
 ]

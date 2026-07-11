@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation";
 const adminNavItems = [
   { href: "/admin", label: "后台首页" },
   { href: "/admin/users", label: "用户管理" },
+  { href: "/admin/categories", label: "分类管理" },
+  { href: "/admin/rankings", label: "榜单管理" },
   { href: "/admin/novels", label: "小说管理" },
   { href: "/admin/chapters", label: "章节管理" },
   { href: "/admin/comments", label: "评论管理" },

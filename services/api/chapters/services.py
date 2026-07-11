@@ -6,6 +6,7 @@ from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from common.models import AuditLog
+from common.services import create_operation_audit_log
 from novels.models import Novel
 from users.permissions import is_admin_user
 
@@ -118,12 +119,24 @@ def update_author_chapter(chapter, data):
 
 
 @transaction.atomic
-def update_admin_chapter_status(chapter, status):
-    chapter.status = status
-    if status == Chapter.Status.PUBLISHED and chapter.published_at is None:
-        chapter.published_at = timezone.now()
-    chapter.save(update_fields=["status", "published_at", "updated_at"])
-    recalculate_novel_chapter_stats(chapter.novel_id)
+def update_admin_chapter_status(chapter, status, actor=None):
+    old_status = chapter.status
+    should_set_published_at = status == Chapter.Status.PUBLISHED and chapter.published_at is None
+    if old_status != status or should_set_published_at:
+        chapter.status = status
+        if should_set_published_at:
+            chapter.published_at = timezone.now()
+        chapter.save(update_fields=["status", "published_at", "updated_at"])
+        recalculate_novel_chapter_stats(chapter.novel_id)
+        if old_status != status:
+            create_operation_audit_log(
+                content_type=AuditLog.ContentType.CHAPTER,
+                object_id=chapter.id,
+                actor=actor,
+                action=AuditLog.Action.STATUS_UPDATE,
+                from_status=old_status,
+                to_status=status,
+            )
     return chapter
 
 

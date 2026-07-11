@@ -1,6 +1,9 @@
 import { ApiRequestError, apiRequest, buildQueryString } from "@/lib/api/request";
 import { getAccessToken } from "@/lib/auth/token";
 import type {
+  AdminCategory,
+  AdminCategoryListParams,
+  AdminCategoryPage,
   AdminChapter,
   AdminChapterDetail,
   AdminChapterListParams,
@@ -13,16 +16,30 @@ import type {
   AdminNovelDetail,
   AdminNovelListParams,
   AdminNovelPage,
+  AdminRankingItem,
+  AdminRankingItemListParams,
+  AdminRankingItemPage,
+  AdminRankingType,
+  AdminRankingTypeListParams,
+  AdminRankingTypePage,
   AdminUser,
   AdminUserDetail,
   AdminUserPage,
   AdminUserRole,
   BanUserPayload,
+  CreateAdminCategoryPayload,
+  CreateAdminRankingItemPayload,
+  CreateAdminRankingTypePayload,
   GetAdminUsersParams,
+  UpdateAdminCategoryPayload,
+  UpdateAdminRankingItemPayload,
+  UpdateAdminRankingTypePayload,
+  UpdateCategoryStatusPayload,
   UpdateChapterStatusPayload,
   UpdateCommentStatusPayload,
   UpdateNovelFeaturedPayload,
   UpdateNovelStatusPayload,
+  UpdateRankingTypeStatusPayload,
 } from "@/types/admin";
 
 function requireLogin(): void {
@@ -61,6 +78,112 @@ export function unbanUser(id: number | string): Promise<AdminUser> {
   requireLogin();
   return apiRequest<AdminUser>(`/admin/users/${id}/unban/`, {
     method: "POST",
+  });
+}
+
+export function getAdminCategories(params: AdminCategoryListParams = {}): Promise<AdminCategoryPage> {
+  requireLogin();
+  return apiRequest<AdminCategoryPage>(`/admin/categories/${buildQueryString(params)}`);
+}
+
+export function createAdminCategory(payload: CreateAdminCategoryPayload): Promise<AdminCategory> {
+  requireLogin();
+  return apiRequest<AdminCategory>("/admin/categories/", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function getAdminCategoryDetail(id: number | string): Promise<AdminCategory> {
+  requireLogin();
+  return apiRequest<AdminCategory>(`/admin/categories/${id}/`);
+}
+
+export function updateAdminCategory(id: number | string, payload: UpdateAdminCategoryPayload): Promise<AdminCategory> {
+  requireLogin();
+  return apiRequest<AdminCategory>(`/admin/categories/${id}/`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateAdminCategoryStatus(
+  id: number | string,
+  payload: UpdateCategoryStatusPayload,
+): Promise<AdminCategory> {
+  requireLogin();
+  return apiRequest<AdminCategory>(`/admin/categories/${id}/status/`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function getAdminRankingTypes(params: AdminRankingTypeListParams = {}): Promise<AdminRankingTypePage> {
+  requireLogin();
+  return apiRequest<AdminRankingTypePage>(`/admin/ranking-types/${buildQueryString(params)}`);
+}
+
+export function createAdminRankingType(payload: CreateAdminRankingTypePayload): Promise<AdminRankingType> {
+  requireLogin();
+  return apiRequest<AdminRankingType>("/admin/ranking-types/", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function getAdminRankingTypeDetail(id: number | string): Promise<AdminRankingType> {
+  requireLogin();
+  return apiRequest<AdminRankingType>(`/admin/ranking-types/${id}/`);
+}
+
+export function updateAdminRankingType(
+  id: number | string,
+  payload: UpdateAdminRankingTypePayload,
+): Promise<AdminRankingType> {
+  requireLogin();
+  return apiRequest<AdminRankingType>(`/admin/ranking-types/${id}/`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateAdminRankingTypeStatus(
+  id: number | string,
+  payload: UpdateRankingTypeStatusPayload,
+): Promise<AdminRankingType> {
+  requireLogin();
+  return apiRequest<AdminRankingType>(`/admin/ranking-types/${id}/status/`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function getAdminRankingItems(params: AdminRankingItemListParams = {}): Promise<AdminRankingItemPage> {
+  requireLogin();
+  return apiRequest<AdminRankingItemPage>(`/admin/ranking-items/${buildQueryString(params)}`);
+}
+
+export function createAdminRankingItem(payload: CreateAdminRankingItemPayload): Promise<AdminRankingItem> {
+  requireLogin();
+  return apiRequest<AdminRankingItem>("/admin/ranking-items/", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function getAdminRankingItemDetail(id: number | string): Promise<AdminRankingItem> {
+  requireLogin();
+  return apiRequest<AdminRankingItem>(`/admin/ranking-items/${id}/`);
+}
+
+export function updateAdminRankingItem(
+  id: number | string,
+  payload: UpdateAdminRankingItemPayload,
+): Promise<AdminRankingItem> {
+  requireLogin();
+  return apiRequest<AdminRankingItem>(`/admin/ranking-items/${id}/`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
   });
 }
 

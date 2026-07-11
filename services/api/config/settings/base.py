@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     "comments",
     "rankings",
     "search",
+    "video_generation",
 ]
 
 MIDDLEWARE = [

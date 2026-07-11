@@ -29,15 +29,17 @@ function CreateAuthorChapterContent() {
 
   async function handleSubmit(payload: CreateAuthorChapterPayload) {
     if (!novelId) {
-      return;
+      return false;
     }
     setSaving(true);
     setError(null);
     try {
       await createAuthorChapter(novelId, payload);
       router.push(`/author/novels/${novelId}/chapters`);
+      return true;
     } catch (createError) {
       setError(getApiErrorMessage(createError));
+      return false;
     } finally {
       setSaving(false);
     }
@@ -46,7 +48,12 @@ function CreateAuthorChapterContent() {
   return (
     <div className="space-y-4">
       {error ? <p className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
-      <ChapterForm submitLabel="创建章节" submitting={saving} onSubmit={handleSubmit} />
+      <ChapterForm
+        draftStorageKey={`sunshine-reading:author-chapter:create:${novelId}`}
+        submitLabel="创建章节"
+        submitting={saving}
+        onSubmit={handleSubmit}
+      />
     </div>
   );
 }

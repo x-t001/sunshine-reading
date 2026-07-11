@@ -7,6 +7,117 @@ export type AdminAuditStatus = "draft" | "pending" | "reviewing" | "approved" | 
 export type AdminChapterStatus = "draft" | "published" | "hidden";
 export type AdminCommentStatus = "normal" | "hidden" | "deleted";
 
+export type AdminCategoryParent = {
+  id: number;
+  name: string;
+  slug: string;
+};
+
+export type AdminCategory = {
+  id: number;
+  name: string;
+  slug: string;
+  parent: AdminCategoryParent | null;
+  parent_id: number | null;
+  parent_name: string | null;
+  sort_order: number;
+  is_active: boolean;
+  children_count: number;
+  novel_count: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AdminCategoryListParams = {
+  page?: number | string;
+  page_size?: number | string;
+  keyword?: string;
+  is_active?: boolean | "";
+  parent_id?: number | string;
+};
+
+export type CreateAdminCategoryPayload = {
+  name: string;
+  slug: string;
+  parent_id?: number | null;
+  sort_order?: number;
+  is_active?: boolean;
+};
+
+export type UpdateAdminCategoryPayload = Partial<CreateAdminCategoryPayload>;
+
+export type UpdateCategoryStatusPayload = {
+  is_active: boolean;
+};
+
+export type AdminRankingType = {
+  id: number;
+  name: string;
+  code: string;
+  description: string;
+  is_active: boolean;
+  item_count: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AdminRankingTypeListParams = {
+  page?: number | string;
+  page_size?: number | string;
+  keyword?: string;
+  is_active?: boolean | "";
+};
+
+export type CreateAdminRankingTypePayload = {
+  name: string;
+  code: string;
+  description?: string;
+  is_active?: boolean;
+};
+
+export type UpdateAdminRankingTypePayload = Partial<CreateAdminRankingTypePayload>;
+
+export type UpdateRankingTypeStatusPayload = {
+  is_active: boolean;
+};
+
+export type AdminRankingNovel = {
+  id: number;
+  title: string;
+};
+
+export type AdminRankingItem = {
+  id: number;
+  ranking_type: AdminRankingType;
+  ranking_type_id: number;
+  novel: AdminRankingNovel;
+  novel_id: number;
+  novel_title: string;
+  score: string;
+  rank: number;
+  calculated_at: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AdminRankingItemListParams = {
+  page?: number | string;
+  page_size?: number | string;
+  ranking_type_id?: number | string;
+  novel_id?: number | string;
+  keyword?: string;
+};
+
+export type CreateAdminRankingItemPayload = {
+  ranking_type_id: number;
+  novel_id: number;
+  score: string;
+  rank: number;
+  calculated_at?: string;
+};
+
+export type UpdateAdminRankingItemPayload = Partial<CreateAdminRankingItemPayload>;
+
 export type AdminUser = {
   id: number;
   username: string;
@@ -50,6 +161,9 @@ export type BanUserPayload = {
 export type AdminUserPage = PaginatedResponse<AdminUser>;
 
 export type AdminPaginatedResponse<T> = PaginatedResponse<T>;
+export type AdminCategoryPage = AdminPaginatedResponse<AdminCategory>;
+export type AdminRankingTypePage = AdminPaginatedResponse<AdminRankingType>;
+export type AdminRankingItemPage = AdminPaginatedResponse<AdminRankingItem>;
 
 export type AdminNovel = {
   id: number;

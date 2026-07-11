@@ -2,6 +2,8 @@ from django.db import transaction
 from django.db.models import F
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 
+from common.models import AuditLog
+from common.services import create_operation_audit_log
 from novels.models import Novel
 
 from .models import Comment
@@ -69,7 +71,7 @@ def delete_comment(user, comment_id):
 
 
 @transaction.atomic
-def update_admin_comment_status(comment, status):
+def update_admin_comment_status(comment, status, actor=None):
     old_status = comment.status
     if old_status == status:
         return comment
@@ -84,4 +86,12 @@ def update_admin_comment_status(comment, status):
     elif old_status != Comment.Status.NORMAL and status == Comment.Status.NORMAL:
         Novel.objects.filter(id=comment.novel_id).update(comment_count=F("comment_count") + 1)
 
+    create_operation_audit_log(
+        content_type=AuditLog.ContentType.COMMENT,
+        object_id=comment.id,
+        actor=actor,
+        action=AuditLog.Action.STATUS_UPDATE,
+        from_status=old_status,
+        to_status=status,
+    )
     return comment

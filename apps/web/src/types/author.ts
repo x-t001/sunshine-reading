@@ -3,7 +3,25 @@ import type { CategorySummary } from "@/types/category";
 import type { NovelAuditStatus, NovelStatus } from "@/types/novel";
 
 export type AuthorChapterStatus = "draft" | "published" | "hidden";
-export type AuthorChapterAuditStatus = "pending" | "approved" | "rejected";
+export type AuthorChapterAuditStatus = "pending" | "reviewing" | "approved" | "rejected";
+
+export type AuthorAuditAction = "submit" | "claim" | "approve" | "reject";
+
+export type AuthorAuditLog = {
+  id: number;
+  content_type: "novel" | "chapter";
+  object_id: number;
+  reviewer: {
+    id: number;
+    username: string;
+    nickname: string;
+  } | null;
+  action: AuthorAuditAction;
+  from_status: string;
+  to_status: string;
+  reason: string;
+  created_at: string;
+};
 
 export type AuthorNovel = {
   id: number;
@@ -32,6 +50,7 @@ export type AuthorNovelDetail = AuthorNovel & {
   };
   description: string;
   chapter_count: number;
+  audit_logs: AuthorAuditLog[];
 };
 
 export type CreateAuthorNovelPayload = {
@@ -67,6 +86,7 @@ export type AuthorChapterDetail = AuthorChapter & {
   novel_id: number;
   novel_title: string;
   content: string;
+  audit_logs: AuthorAuditLog[];
 };
 
 export type CreateAuthorChapterPayload = {

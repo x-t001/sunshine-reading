@@ -20,7 +20,8 @@ const statusLabels: Record<NovelStatus, string> = {
 
 const auditStatusLabels: Record<NovelAuditStatus, string> = {
   draft: "草稿",
-  pending: "审核中",
+  pending: "待审核",
+  reviewing: "审核中",
   approved: "已通过",
   rejected: "已拒绝",
 };

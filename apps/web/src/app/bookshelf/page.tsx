@@ -5,22 +5,24 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { getBookshelf, removeFromBookshelf } from "@/lib/api/bookshelf";
 import { getApiErrorMessage } from "@/lib/api/request";
+import { getNovelCoverUrl } from "@/lib/utils/cover";
 import { formatDateLabel } from "@/lib/utils/format";
 import { useAuth } from "@/hooks/useAuth";
 import type { BookshelfItem } from "@/types/bookshelf";
-
-function coverUrl(item: BookshelfItem): string {
-  if (item.novel.cover.startsWith("https://picsum.photos/")) {
-    return item.novel.cover;
-  }
-  return `https://picsum.photos/seed/sunshine-${item.novel.id}/240/320`;
-}
 
 function readHref(item: BookshelfItem): string {
   if (item.last_read_chapter) {
     return `/novels/${item.novel.id}/chapters/${item.last_read_chapter.id}`;
   }
   return `/novels/${item.novel.id}`;
+}
+
+function formatProgress(value: string): string {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) {
+    return "暂无";
+  }
+  return `${Math.max(0, Math.min(100, Math.round(numericValue)))}%`;
 }
 
 export default function BookshelfPage() {
@@ -109,7 +111,7 @@ export default function BookshelfPage() {
         {items.map((item) => (
           <article key={item.id} className="flex gap-3 rounded-xl border border-zinc-200 bg-white p-3 shadow-sm">
             <Image
-              src={coverUrl(item)}
+              src={getNovelCoverUrl(item.novel.cover)}
               alt={item.novel.title}
               width={72}
               height={96}
@@ -119,14 +121,10 @@ export default function BookshelfPage() {
               <Link href={`/novels/${item.novel.id}`} className="line-clamp-1 text-sm font-semibold text-zinc-900">
                 {item.novel.title}
               </Link>
+              <p className="mt-1 text-xs text-zinc-500">{item.novel.author.nickname || item.novel.author.username}</p>
+              <p className="mt-2 text-xs text-zinc-600">最近阅读：{item.last_read_chapter?.title || "尚未开始"}</p>
               <p className="mt-1 text-xs text-zinc-500">
-                {item.novel.author.nickname || item.novel.author.username}
-              </p>
-              <p className="mt-2 text-xs text-zinc-600">
-                最近阅读：{item.last_read_chapter?.title || "尚未开始"}
-              </p>
-              <p className="mt-1 text-xs text-zinc-500">
-                进度 {item.reading_progress} · 最近阅读 {item.last_read_at ? formatDateLabel(item.last_read_at) : "暂无"}
+                进度 {formatProgress(item.reading_progress)} · 最近阅读 {item.last_read_at ? formatDateLabel(item.last_read_at) : "暂无"}
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <Link href={readHref(item)} className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-medium text-white">

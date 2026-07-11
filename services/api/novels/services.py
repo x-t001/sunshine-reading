@@ -6,9 +6,10 @@ from django.utils import timezone
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 
 from common.models import AuditLog
+from common.services import create_operation_audit_log
 from users.permissions import is_admin_user
 
-from .models import Novel, NovelRating
+from .models import Category, Novel, NovelRating
 from .selectors import get_public_novel_by_id, get_rating_for_user
 
 
@@ -45,6 +46,105 @@ def build_rating_summary(novel, user=None):
         "rating_count": novel.rating_count,
         "my_rating": get_rating_for_user(novel.id, user),
     }
+
+
+def _is_descendant(category, possible_ancestor):
+    current = category
+    while current is not None:
+        if current.id == possible_ancestor.id:
+            return True
+        current = current.parent
+    return False
+
+
+def _validate_category_parent(category, parent):
+    if parent is None:
+        return
+    if category is not None and parent.id == category.id:
+        raise ValidationError({"parent_id": ["Category cannot use itself as parent."]})
+    if category is not None and _is_descendant(parent, category):
+        raise ValidationError({"parent_id": ["Category cannot use its descendant as parent."]})
+
+
+def _collect_changed_fields(instance, data, fields):
+    changes = {}
+    for field in fields:
+        if field not in data:
+            continue
+        old_value = getattr(instance, field)
+        new_value = data[field]
+        if old_value != new_value:
+            changes[field] = {"from": str(old_value), "to": str(new_value)}
+    return changes
+
+
+@transaction.atomic
+def create_admin_category(data, actor=None):
+    parent = data.get("parent")
+    _validate_category_parent(None, parent)
+    category = Category.objects.create(
+        name=data["name"],
+        slug=data["slug"],
+        parent=parent,
+        sort_order=data.get("sort_order", 0),
+        is_active=data.get("is_active", True),
+    )
+    create_operation_audit_log(
+        content_type=AuditLog.ContentType.CATEGORY,
+        object_id=category.id,
+        actor=actor,
+        action=AuditLog.Action.CREATE,
+        to_status="active" if category.is_active else "inactive",
+        reason={"name": category.name, "slug": category.slug},
+    )
+    return category
+
+
+@transaction.atomic
+def update_admin_category(category, data, actor=None):
+    if "parent" in data:
+        _validate_category_parent(category, data.get("parent"))
+
+    changes = _collect_changed_fields(category, data, ("name", "slug", "parent", "sort_order", "is_active"))
+    update_fields = []
+    for field in ("name", "slug", "parent", "sort_order", "is_active"):
+        if field not in data:
+            continue
+        setattr(category, field, data[field])
+        update_fields.append(field)
+
+    if update_fields:
+        update_fields.append("updated_at")
+        category.save(update_fields=update_fields)
+        if changes:
+            create_operation_audit_log(
+                content_type=AuditLog.ContentType.CATEGORY,
+                object_id=category.id,
+                actor=actor,
+                action=AuditLog.Action.UPDATE,
+                from_status="",
+                to_status="",
+                reason={"changes": changes},
+            )
+    return category
+
+
+@transaction.atomic
+def update_admin_category_status(category, is_active, actor=None):
+    old_status = "active" if category.is_active else "inactive"
+    new_status = "active" if is_active else "inactive"
+    if category.is_active != is_active:
+        category.is_active = is_active
+        category.save(update_fields=["is_active", "updated_at"])
+        create_operation_audit_log(
+            content_type=AuditLog.ContentType.CATEGORY,
+            object_id=category.id,
+            actor=actor,
+            action=AuditLog.Action.STATUS_UPDATE,
+            from_status=old_status,
+            to_status=new_status,
+        )
+    return category
 
 
 @transaction.atomic
@@ -132,16 +232,37 @@ def update_author_novel(novel, data):
 
 
 @transaction.atomic
-def update_admin_novel_status(novel, status):
-    novel.status = status
-    novel.save(update_fields=["status", "updated_at"])
+def update_admin_novel_status(novel, status, actor=None):
+    old_status = novel.status
+    if old_status != status:
+        novel.status = status
+        novel.save(update_fields=["status", "updated_at"])
+        create_operation_audit_log(
+            content_type=AuditLog.ContentType.NOVEL,
+            object_id=novel.id,
+            actor=actor,
+            action=AuditLog.Action.STATUS_UPDATE,
+            from_status=old_status,
+            to_status=status,
+        )
     return novel
 
 
 @transaction.atomic
-def update_admin_novel_featured(novel, is_featured):
-    novel.is_featured = is_featured
-    novel.save(update_fields=["is_featured", "updated_at"])
+def update_admin_novel_featured(novel, is_featured, actor=None):
+    old_status = "featured" if novel.is_featured else "normal"
+    new_status = "featured" if is_featured else "normal"
+    if novel.is_featured != is_featured:
+        novel.is_featured = is_featured
+        novel.save(update_fields=["is_featured", "updated_at"])
+        create_operation_audit_log(
+            content_type=AuditLog.ContentType.NOVEL,
+            object_id=novel.id,
+            actor=actor,
+            action=AuditLog.Action.FEATURE_UPDATE,
+            from_status=old_status,
+            to_status=new_status,
+        )
     return novel
 
 

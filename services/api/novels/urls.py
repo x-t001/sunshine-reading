@@ -1,6 +1,9 @@
 from django.urls import path
 
 from .views import (
+    AdminCategoryDetailView,
+    AdminCategoryListCreateView,
+    AdminCategoryStatusView,
     AdminNovelApproveView,
     AdminNovelDetailView,
     AdminNovelFeaturedView,
@@ -29,6 +32,9 @@ app_name = "novels"
 
 urlpatterns = [
     path("categories/", CategoryListView.as_view(), name="category-list"),
+    path("admin/categories/", AdminCategoryListCreateView.as_view(), name="admin-category-list-create"),
+    path("admin/categories/<int:id>/status/", AdminCategoryStatusView.as_view(), name="admin-category-status"),
+    path("admin/categories/<int:id>/", AdminCategoryDetailView.as_view(), name="admin-category-detail"),
     path("novels/", NovelListView.as_view(), name="novel-list"),
     path("novels/<int:id>/", NovelDetailView.as_view(), name="novel-detail"),
     path("novels/<int:novel_id>/ratings/summary/", NovelRatingSummaryView.as_view(), name="novel-rating-summary"),

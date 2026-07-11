@@ -1,16 +1,71 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { categories } from "@/mocks/categories";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { categories as fallbackCategories } from "@/mocks/categories";
 import { useAuth } from "@/hooks/useAuth";
 import { getAdminUsers } from "@/lib/api/admin";
+import { getCategories } from "@/lib/api/categories";
+
+type NavigationCategory = {
+  id: number | string;
+  name: string;
+  slug: string;
+};
+
+type CategoryLinksProps = {
+  activeSlug?: string | null;
+  categories: NavigationCategory[];
+  isNovelList?: boolean;
+};
+
+function categoryLinkClass(active: boolean): string {
+  return active
+    ? "shrink-0 rounded-full bg-emerald-600 px-3 py-1 text-xs font-medium text-white"
+    : "shrink-0 rounded-full bg-zinc-100 px-3 py-1 text-xs text-zinc-600 transition-colors hover:bg-zinc-200 hover:text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600";
+}
+
+function CategoryLinks({ activeSlug, categories, isNovelList = false }: CategoryLinksProps) {
+  return (
+    <>
+      <Link href="/novels" className={categoryLinkClass(isNovelList && !activeSlug)} aria-current={isNovelList && !activeSlug ? "page" : undefined}>
+        全部
+      </Link>
+      {categories.map((item) => {
+        const active = isNovelList && activeSlug === item.slug;
+        return (
+          <Link
+            key={`${item.id}-${item.slug}`}
+            href={`/novels?category=${encodeURIComponent(item.slug)}`}
+            className={categoryLinkClass(active)}
+            aria-current={active ? "page" : undefined}
+          >
+            {item.name}
+          </Link>
+        );
+      })}
+      <Link
+        href="/categories"
+        className="shrink-0 px-2 py-1 text-xs font-medium text-emerald-700 hover:text-emerald-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
+      >
+        查看全部
+      </Link>
+    </>
+  );
+}
+
+function ActiveCategoryLinks({ categories }: { categories: NavigationCategory[] }) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  return <CategoryLinks categories={categories} isNovelList={pathname === "/novels"} activeSlug={searchParams.get("category")} />;
+}
 
 export function SiteHeader() {
   const router = useRouter();
   const { user, loading, logout } = useAuth();
   const [canAccessAdminPanel, setCanAccessAdminPanel] = useState(false);
+  const [navigationCategories, setNavigationCategories] = useState<NavigationCategory[]>(fallbackCategories);
   const canAccessAuthorCenter = user?.role === "author" || user?.role === "admin";
   const canAccessReviewerCenter = user?.role === "reviewer" || user?.role === "admin" || user?.is_staff || user?.is_superuser;
 
@@ -44,6 +99,24 @@ export function SiteHeader() {
       active = false;
     };
   }, [user]);
+
+  useEffect(() => {
+    let active = true;
+
+    void getCategories()
+      .then((items) => {
+        if (active && items.length > 0) {
+          setNavigationCategories(items);
+        }
+      })
+      .catch(() => {
+        // Header navigation remains usable with the local fallback categories.
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   function handleLogout() {
     logout();
@@ -93,13 +166,11 @@ export function SiteHeader() {
           )}
         </div>
       </div>
-      <div className="mx-auto hidden max-w-5xl gap-2 overflow-x-auto px-4 py-2 md:flex">
-        {categories.map((item) => (
-          <span key={item.id} className="rounded-full bg-zinc-100 px-3 py-1 text-xs text-zinc-600">
-            {item.name}
-          </span>
-        ))}
-      </div>
+      <nav className="mx-auto flex max-w-5xl gap-2 overflow-x-auto px-4 py-2" aria-label="小说分类快捷导航">
+        <Suspense fallback={<CategoryLinks categories={navigationCategories} />}>
+          <ActiveCategoryLinks categories={navigationCategories} />
+        </Suspense>
+      </nav>
     </header>
   );
 }
