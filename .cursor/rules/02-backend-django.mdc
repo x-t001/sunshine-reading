@@ -1,36 +1,34 @@
-﻿---
-description: Backend Django architecture and service layering constraints
+---
+description: Django 后端架构与服务分层约束
 alwaysApply: true
 ---
 
-# 02 Backend Django Rule / 后端 Django 规则
+# 02 后端 Django 规则
 
-## Purpose / 目的
-- Define backend layering, module responsibility, and API implementation boundaries.
+## 目的
 - 定义后端分层、模块职责与 API 实现边界。
 
-## Inputs / 输入
-- Domain use case / 领域用例
-- API contract / API 合同
-- Permission matrix / 权限矩阵
+## 输入
+- 领域用例
+- API 契约
+- 权限矩阵
 
-## Steps / 步骤
-1. Use planned backend structure only:
-   - `backend/apps/<domain>/models.py` (entities)
-   - `backend/apps/<domain>/services.py` (business logic)
-   - `backend/apps/<domain>/serializers.py` (io schema)
-   - `backend/apps/<domain>/views.py` (http layer)
-2. Enforce layering: `views -> services -> models`; views must not contain business logic. / 强制分层：`views -> services -> models`，视图层禁止写业务逻辑。
-3. Validate request data via serializers/schema before entering service layer. / 进入服务层前必须完成请求数据校验。
-4. Return responses only in unified API envelope defined by rule `03-api-contract.mdc`. / 所有响应必须使用 `03-api-contract.mdc` 统一封装。
-5. Do not execute Django scaffold/init commands in current stage. / 当前阶段禁止执行 Django 初始化命令。
+## 步骤
+1. 仅使用规划的后端结构：
+   - `backend/apps/<domain>/models.py`：实体模型
+   - `backend/apps/<domain>/services.py`：业务逻辑
+   - `backend/apps/<domain>/serializers.py`：输入输出结构
+   - `backend/apps/<domain>/views.py`：HTTP 层
+2. 强制遵循 `views -> services -> models` 分层，视图层不得包含业务逻辑。
+3. 请求数据进入服务层前，必须通过序列化器或结构定义完成校验。
+4. 所有响应必须使用 `03-api-contract.mdc` 定义的统一 API 封装。
+5. 当前阶段禁止执行 Django 脚手架或初始化命令。
 
-## Output / 产出
-- Backend blueprint with strict separation of concerns.
+## 产出
 - 职责边界清晰的后端蓝图。
 
-## Checklist / 检查清单
-- [ ] Module structure matches contract. / 模块结构符合契约。
-- [ ] View-service-model layering is respected. / 视图/服务/模型分层正确。
-- [ ] Response envelope is unified. / 响应封装统一。
-- [ ] No Django initialization executed. / 未执行 Django 初始化。
+## 检查清单
+- [ ] 模块结构符合契约。
+- [ ] 视图、服务与模型分层正确。
+- [ ] 响应封装统一。
+- [ ] 未执行 Django 初始化。

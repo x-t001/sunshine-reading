@@ -1,31 +1,36 @@
-﻿# AGENTS Guide - Sunshine Reading (阳光阅读)
+# AGENTS 指南 - Sunshine Reading（阳光阅读）
 
-## Purpose / 目的
-- Define mandatory workflow and boundaries for AI changes.
-- 定义 AI 变更的强制流程与边界。
+## 目的
+- 定义 AI 修改项目时必须遵循的工作流与边界。
 
-## Inputs / 输入
-- Rules directory / 规则目录: `.cursor/rules`
-- Skills directory / 技能目录: `docs/ai-skills`
+## 输入
+- 规则目录：`.cursor/rules`
+- 技能目录：`docs/ai-skills`
 
-## Mandatory Workflow / 强制流程
-1. Clarify scope, deliverable, and forbidden actions. / 澄清范围、交付物与禁用动作。
-2. Load applicable rules in order (`00` -> `07`). / 按顺序加载适用规则（`00` -> `07`）。
-3. Select one matching skill and execute its checklist. / 选择匹配技能并执行清单。
-4. Implement minimal changes only in requested files. / 仅在请求文件内做最小变更。
-5. Verify and report changed files + risks. / 验证并汇报变更文件与风险。
+## 强制工作流
+1. 澄清任务范围、交付物与禁用动作。
+2. 按顺序加载适用规则（`00` 到 `07`）。
+3. 选择一个匹配的技能文件并执行其检查清单。
+4. 仅在任务直接相关的文件内实施最小变更。
+5. 完成验证，并汇报变更文件、验证结果与风险。
 
-## AI Boundary / AI 修改边界
-- Must refuse scaffold commands during docs-only stage. / 文档阶段必须拒绝脚手架命令。
-- Must refuse unrelated refactor outside request scope. / 必须拒绝超范围无关重构。
-- Must not change naming conventions or response envelope without explicit approval. / 未经明确批准，不得修改命名规范或响应封装格式。
+## AI 修改边界
+- 文档阶段必须拒绝脚手架或框架初始化命令。
+- 必须拒绝任务范围外的无关重构。
+- 未经明确批准，不得修改命名规范或 API 响应封装格式。
 
-## Output / 产出
-- Predictable, auditable, and scope-controlled AI execution.
-- 可预测、可审计、范围可控的 AI 执行过程。
+## 提示文档语言
+- 项目内供 AI、开发代理或自动化工具使用的指导文档、规则、技能和提示模板，说明文字必须使用简体中文。
+- 新增或更新此类文档时，默认使用中文，不再添加中英双语重复段落。
+- 文件名、目录名、代码标识符、命令、配置键、API 字段和上游工具要求的固定标记保持英文或原始格式。
+- 必须引用英文原文时，应同时给出中文说明，并只保留必要的英文内容。
 
-## Checklist / 检查清单
-- [ ] Rule order is respected. / 规则加载顺序正确。
-- [ ] Skill checklist is applied. / 技能清单已执行。
-- [ ] Scope boundaries are respected. / 范围边界已遵守。
-- [ ] Forbidden actions are not executed. / 禁用动作未执行。
+## 产出
+- 可预测、可审计且范围可控的 AI 执行过程。
+
+## 检查清单
+- [ ] 已按顺序加载规则。
+- [ ] 已执行匹配技能的检查清单。
+- [ ] 已遵守任务范围边界。
+- [ ] 未执行禁用动作。
+- [ ] 提示类文档说明文字已使用简体中文。

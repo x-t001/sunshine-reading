@@ -1,32 +1,30 @@
-﻿---
-description: Database schema naming, constraints, and migration policy
+---
+description: 数据库结构命名、约束与迁移策略
 alwaysApply: true
 ---
 
-# 04 Database Design Rule / 数据库设计规则
+# 04 数据库设计规则
 
-## Purpose / 目的
-- Enforce consistent schema design for novel reading domain data.
-- 为小说阅读领域数据强制一致的结构设计规范。
+## 目的
+- 为小说阅读领域数据建立一致的结构设计规范。
 
-## Inputs / 输入
-- Entity list / 实体清单
-- Access patterns / 访问模式
-- Integrity constraints / 完整性约束
+## 输入
+- 实体清单
+- 访问模式
+- 完整性约束
 
-## Steps / 步骤
-1. Table/column names must be English snake_case; primary key is `id` (bigint/uuid). / 表名字段名使用英文 snake_case；主键统一 `id`。
-2. Core tables should include `created_at`, `updated_at`, and optional `deleted_at` for soft delete. / 核心表包含创建、更新，按需包含软删除字段。
-3. Define unique constraints for business identity (e.g., `book_slug`, `chapter_no`). / 对业务唯一性定义唯一约束（如 `book_slug`、`chapter_no`）。
-4. Add indexes for frequent filters/sorts; avoid over-indexing write-heavy fields. / 对高频查询字段加索引，避免写密集字段过度索引。
-5. Every schema change must include forward migration and rollback assessment. / 每次结构变更必须包含正向迁移与回滚评估。
+## 步骤
+1. 表名和字段名必须使用英文 `snake_case`；主键统一为 `id`，类型使用 `bigint` 或 `uuid`。
+2. 核心表应包含 `created_at`、`updated_at`，并按需增加软删除字段 `deleted_at`。
+3. 为业务唯一标识定义唯一约束，例如 `book_slug`、`chapter_no`。
+4. 为高频筛选和排序字段增加索引，避免对写入密集字段过度建立索引。
+5. 每次数据库结构变更都必须包含正向迁移方案和回滚风险评估。
 
-## Output / 产出
-- Migration-safe and query-efficient relational schema.
-- 迁移安全、查询高效的关系型结构。
+## 产出
+- 迁移安全且查询高效的关系型结构。
 
-## Checklist / 检查清单
-- [ ] Naming and types are standardized. / 命名与类型标准化。
-- [ ] Unique/index constraints are justified. / 唯一约束与索引有依据。
-- [ ] Audit and soft-delete policy is explicit. / 审计与软删除策略明确。
-- [ ] Migration rollback risk is reviewed. / 迁移回滚风险已评估。
+## 检查清单
+- [ ] 命名与类型已标准化。
+- [ ] 唯一约束与索引有明确依据。
+- [ ] 审计与软删除策略明确。
+- [ ] 已评估迁移回滚风险。

@@ -1,31 +1,32 @@
-﻿---
-description: AI code modification boundaries and execution quality gates
+---
+description: AI 代码修改边界与执行质量门禁
 alwaysApply: true
 ---
 
-# 07 AI Working Mode Rule / AI 工作模式规则
+# 07 AI 工作模式规则
 
-## Purpose / 目的
-- Define what AI can change, cannot change, and must verify.
-- 定义 AI 可改、禁改与必验证内容。
+## 目的
+- 定义 AI 可以修改、禁止修改以及必须验证的内容。
 
-## Inputs / 输入
-- User request / 用户请求
-- Applicable rules and skills / 适用规则与技能
+## 输入
+- 用户请求
+- 适用规则与技能
 
-## Steps / 步骤
-1. Classify request as docs-only, implementation, or debugging before editing. / 编辑前先判断任务类型：文档/实现/排障。
-2. Refuse actions that violate current stage boundaries (framework init, business code). / 拒绝违反当前阶段边界的动作（框架初始化、业务编码）。
-3. Modify only files directly related to request; no opportunistic refactor. / 仅修改请求相关文件，禁止机会式重构。
-4. Preserve existing API envelope, security baseline, and naming conventions unless user explicitly approves change. / 未经用户明确批准，保持 API 封装、安全基线和命名规范不变。
-5. In final report, list changed files, validation results, and unresolved risks. / 最终汇报必须包含变更文件、验证结果和未解决风险。
+## 步骤
+1. 编辑前先判断任务属于文档、实现还是排障。
+2. 拒绝违反当前阶段边界的动作，包括框架初始化与业务编码。
+3. 仅修改与请求直接相关的文件，禁止机会式重构。
+4. 未经用户明确批准，必须保持现有 API 封装、安全基线和命名规范不变。
+5. 供 AI、开发代理或自动化工具使用的指导文档、规则、技能与提示模板，新增或修改的说明文字必须使用简体中文。
+6. 文件名、路径、命令、代码标识符、配置键、API 字段和工具固定标记保持英文或原始格式，禁止为了中文化破坏机器可读内容。
+7. 最终汇报必须包含变更文件、验证结果和未解决风险。
 
-## Output / 产出
-- Controlled AI edits with explicit governance evidence.
-- 具备治理证据的可控 AI 变更流程。
+## 产出
+- 具备明确治理证据的可控 AI 变更流程。
 
-## Checklist / 检查清单
-- [ ] Stage boundary checks are passed. / 阶段边界检查通过。
-- [ ] File scope is controlled. / 文件改动范围可控。
-- [ ] Invariants are preserved. / 核心不变量已保持。
-- [ ] Final verification is reported. / 最终验证已汇报。
+## 检查清单
+- [ ] 阶段边界检查通过。
+- [ ] 文件改动范围可控。
+- [ ] 核心不变量已保持。
+- [ ] 提示类文档说明文字已使用简体中文。
+- [ ] 最终验证结果已汇报。

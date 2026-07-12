@@ -253,12 +253,20 @@ Dependency:
 - Design RFC exists at `10-short-video-generation-rfc.md`.
 - Backend first pass exists for text-sourced private video project drafts.
 - Implemented backend pieces: `VideoProject`, `VideoScene`, create/list/detail/delete APIs, admin list/detail APIs, soft delete, audit logs, and smoke tests.
-- No frontend page, AI storyboard generation, media asset generation, or video rendering exists yet.
+- Frontend first pass exists for `/video-projects`, `/video-projects/create`, and `/video-projects/[id]`, with homepage/top-nav/bottom-nav entry points.
+- Local story draft generation exists at `POST /api/video-projects/story-draft/` and can fill the create-project form from a short idea.
+- Local storyboard generation exists at `POST /api/video-projects/{id}/storyboard/` and writes 4-8 `VideoScene` records without calling an external provider.
+- Generated scenes can be edited at `PATCH /api/video-projects/{id}/scenes/{scene_id}/`; scene content and duration changes are audited.
+- Server-configured OpenAI-compatible storyboard generation exists at `POST /api/video-projects/{id}/storyboard/ai/`, with structured validation, failure state, retry, and local fallback.
+- Provider-backed storyboard generation supports durable database jobs, frontend polling, bounded retry, and stale-worker recovery; the synchronous endpoint remains for compatibility.
+- Users can create projects from public approved chapters; authors can also use their own draft/review chapters, and admins can use any chapter.
+- Chapter projects retain source references plus a hashed, bounded content snapshot.
+- Media asset generation and video rendering do not exist yet.
 
 ### Planned MVP
 
 - Create a video project from accessible novel/chapter content.
-- Generate story analysis and storyboard scenes.
+- Generate provider-backed story drafts, story analysis, and higher-quality storyboard scenes.
 - Save scene visual prompts, narration, subtitles, duration, mood, and status.
 - Keep outputs as private project drafts in the first implementation.
 

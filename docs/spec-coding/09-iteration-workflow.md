@@ -1,373 +1,365 @@
-# Iteration Workflow
+# 迭代工作流
 
-This document defines how Sunshine Reading should plan, implement, verify, and hand off each project iteration.
+本文档定义 Sunshine Reading 每轮项目迭代的规划、实施、验证与交接方式。
 
-本文件定义阳光阅读后续每一轮迭代如何进入、拆分、实现、验证与交接。
+## 1. 目的
 
-## 1. Purpose
+本工作流有四个目标：
 
-The workflow has four goals:
+1. 将每轮迭代控制在可评审、可验证的范围内。
+2. 保持现有路由、数据、权限和 API 响应契约稳定。
+3. 将测试与文档更新纳入同一轮迭代，而不是后续补做。
+4. 为其他开发者或后续 AI 会话留下足够的安全接续信息。
 
-1. Keep every iteration small enough to review and verify.
-2. Preserve existing route, data, permission, and API response contracts.
-3. Make tests and documentation part of the same iteration, not follow-up work.
-4. Leave enough context for another developer or AI session to continue safely.
+本文档是实际执行入口，并与以下文档配合使用：
 
-This document is the practical execution workflow. It complements:
-
-| Document | Role |
+| 文档 | 作用 |
 | --- | --- |
-| `AGENTS.md` | Mandatory AI workflow and boundary rules. |
-| `.cursor/rules/00-project-overview.mdc` to `.cursor/rules/07-ai-working-mode.mdc` | Project, frontend, backend, API, database, UI, security, and AI execution rules. |
-| `docs/spec-coding/01-current-state.md` | Current implemented system state. |
-| `docs/spec-coding/03-roadmap.md` | Product and engineering roadmap. |
-| `docs/spec-coding/04-development-flow.md` | General development flow diagrams. |
-| `docs/spec-coding/05-testing-plan.md` | Verification commands and scenario matrix. |
-| `docs/spec-coding/06-api-data-contract.md` | Actual current API and data contract. |
-| `docs/spec-coding/08-context-handoff-template.md` | Handoff format for long-running work. |
+| `AGENTS.md` | AI 强制工作流与边界规则。 |
+| `.cursor/rules/00-project-overview.mdc` 到 `.cursor/rules/07-ai-working-mode.mdc` | 项目、前端、后端、API、数据库、UI、安全与 AI 执行规则。 |
+| `docs/spec-coding/01-current-state.md` | 当前已实现系统状态。 |
+| `docs/spec-coding/03-roadmap.md` | 产品与工程路线图。 |
+| `docs/spec-coding/04-development-flow.md` | 通用开发流程图。 |
+| `docs/spec-coding/05-testing-plan.md` | 验证命令与场景矩阵。 |
+| `docs/spec-coding/06-api-data-contract.md` | 当前实际 API 与数据契约。 |
+| `docs/spec-coding/08-context-handoff-template.md` | 长任务的交接格式。 |
 
-Important contract note:
+重要契约说明：
 
-- The current implementation uses `/api/` routes and `{ "code": 0, "message": "success", "data": ... }`.
-- `.cursor/rules/03-api-contract.mdc` still describes an older `/api/v1` + `request_id` plan.
-- For normal development, preserve the actual implemented contract recorded in `06-api-data-contract.md`.
-- Any migration toward a different API envelope or route prefix must be its own approved migration task.
+- 当前实现使用 `/api/` 路由和 `{ "code": 0, "message": "success", "data": ... }`。
+- `.cursor/rules/03-api-contract.mdc` 仍描述较早的 `/api/v1` 与 `request_id` 规划。
+- 日常开发必须以 `06-api-data-contract.md` 记录的实际契约为准。
+- 迁移到其他 API 封装或路由前缀时，必须建立独立且经过批准的迁移任务。
 
-## 2. Iteration Unit
+## 2. 迭代单位
 
-One iteration should normally fit into 0.5 to 2 working days.
+一轮迭代通常应控制在 0.5 到 2 个工作日内，并且只能有一个主要目标，例如：
 
-Each iteration must have exactly one primary objective, for example:
+- 一个面向用户的功能切片。
+- 一项后端能力。
+- 一个前端页面或工作流。
+- 一个缺陷修复。
+- 一项测试或基础设施改进。
+- 一次文档或设计更新。
 
-- one user-facing feature slice,
-- one backend capability,
-- one frontend page or workflow,
-- one bug fix,
-- one test or infrastructure improvement,
-- one documentation or design update.
+不得在同一轮迭代中混合无关的高风险变更。应避免：
 
-Do not combine unrelated high-risk changes in the same iteration. Examples to avoid:
+- 新模型、多个页面、权限重构和 UI 改版同时进行。
+- 支付或权益功能与普通 UI 优化混合。
+- API 响应封装迁移与功能开发混合。
+- 大范围编码清理与业务逻辑修改混合。
+- 自动化脚本同时重写应用代码。
 
-- new models + multiple pages + permission redesign + UI restyle,
-- payment or entitlement work mixed with ordinary UI polish,
-- API envelope migration mixed with feature development,
-- broad encoding cleanup mixed with business logic changes,
-- automation scripts that also rewrite application code.
+“根据小说、故事或文章生成短视频”这类大型功能，必须先进行设计或 RFC 迭代。第一轮实现只能覆盖一个窄的纵向切片，例如“文本输入 -> AI 分镜草稿”。
 
-Large features, such as "generate short videos from novel/story/article content", must start as a design/RFC iteration before implementation. The first implementation iteration should then cover only one thin vertical slice, such as "text input -> AI-generated storyboard draft".
-
-## 3. Workflow Overview
+## 3. 工作流总览
 
 ```mermaid
 flowchart TD
-  A[Backlog or user request] --> B[Intake]
-  B --> C[Context loading]
-  C --> D[Work item spec]
-  D --> E{Ready?}
-  E -- No --> B
-  E -- Yes --> F[Design]
-  F --> G{Risk gate?}
-  G -- Yes --> H[Explicit approval]
-  H --> I[Implementation]
-  G -- No --> I
-  I --> J[Verification]
-  J --> K{Pass?}
-  K -- No --> L[Debug loop]
+  A[待办事项或用户请求] --> B[任务接收]
+  B --> C[加载上下文]
+  C --> D[编写工作项规格]
+  D --> E{是否准备就绪}
+  E -- 否 --> B
+  E -- 是 --> F[设计]
+  F --> G{是否触发风险门禁}
+  G -- 是 --> H[获得明确批准]
+  H --> I[实施]
+  G -- 否 --> I
+  I --> J[验证]
+  J --> K{是否通过}
+  K -- 否 --> L[调试循环]
   L --> J
-  K -- Yes --> M[Docs sync]
-  M --> N[Handoff and final report]
-  N --> O[Done]
+  K -- 是 --> M[同步文档]
+  M --> N[交接与最终汇报]
+  N --> O[完成]
 ```
 
-## 4. Roles And Responsibilities
+## 4. 角色与职责
 
-| Role | Responsibility |
+| 角色 | 职责 |
 | --- | --- |
-| Requester | Defines the problem, priority, acceptance criteria, and forbidden scope. |
-| Implementer | Reads rules/docs, scopes the change, implements minimal changes, runs verification, and reports risks. |
-| Reviewer | Checks behavior, permission boundaries, API compatibility, test coverage, and documentation updates. |
-| Operator/Admin | Confirms admin-facing behavior, audit requirements, data safety, and operational fallback. |
+| 需求方 | 定义问题、优先级、验收标准与禁止范围。 |
+| 实施者 | 阅读规则与文档、控制变更范围、实施最小修改、执行验证并汇报风险。 |
+| 评审者 | 检查行为、权限边界、API 兼容性、测试覆盖和文档更新。 |
+| 运营或管理员 | 确认管理端行为、审计要求、数据安全与运行兜底。 |
 
-For solo or AI-assisted work, the implementer must still simulate the reviewer role before marking the iteration done.
+个人或 AI 辅助开发时，实施者在标记完成前仍必须模拟评审者角色执行复核。
 
-## 5. Intake
+## 5. 任务接收
 
-Every iteration starts by clarifying:
+每轮迭代开始时必须明确：
 
-| Question | Required |
+| 问题 | 是否必填 |
 | --- | --- |
-| What problem does this solve? | Yes |
-| Which role is affected: reader, author, reviewer, admin, public visitor, or operator? | Yes |
-| Is this docs-only, frontend-only, backend-only, full-stack, test, or infrastructure work? | Yes |
-| Which files, apps, or domains are allowed to change? | Yes |
-| Which files, apps, or domains must not change? | Yes |
-| Does it affect models, migrations, routes, API fields, permissions, or response envelopes? | Yes |
-| What is the smallest acceptable deliverable? | Yes |
-| What verification commands or manual checks will prove completion? | Yes |
+| 本任务解决什么问题？ | 是 |
+| 影响哪个角色：读者、作者、审核员、管理员、公开访客或运营人员？ | 是 |
+| 属于纯文档、纯前端、纯后端、全栈、测试还是基础设施任务？ | 是 |
+| 允许修改哪些文件、应用或领域？ | 是 |
+| 禁止修改哪些文件、应用或领域？ | 是 |
+| 是否影响模型、迁移、路由、API 字段、权限或响应封装？ | 是 |
+| 最小可接受交付物是什么？ | 是 |
+| 哪些命令或手工检查可以证明完成？ | 是 |
 
-If these answers are unclear, the iteration should stay in design or clarification. Implementation should not start.
+如果这些问题没有明确答案，任务应停留在设计或澄清阶段，不得开始实施。
 
-## 6. Context Loading
+## 6. 加载上下文
 
-Before editing files, load context in this order:
+修改文件前按以下顺序加载上下文：
 
-1. `AGENTS.md`.
-2. `.cursor/rules/00-project-overview.mdc` through `.cursor/rules/07-ai-working-mode.mdc`.
-3. One matching checklist from `docs/ai-skills`.
-4. `docs/spec-coding/01-current-state.md`.
-5. `docs/spec-coding/06-api-data-contract.md` if API, data, roles, or permissions may change.
-6. `docs/spec-coding/05-testing-plan.md` if tests or verification commands may change.
-7. Current code for the target domain.
+1. `AGENTS.md`。
+2. `.cursor/rules/00-project-overview.mdc` 到 `.cursor/rules/07-ai-working-mode.mdc`。
+3. 从 `docs/ai-skills` 选择一个匹配清单。
+4. `docs/spec-coding/01-current-state.md`。
+5. API、数据、角色或权限可能变化时阅读 `docs/spec-coding/06-api-data-contract.md`。
+6. 测试或验证命令可能变化时阅读 `docs/spec-coding/05-testing-plan.md`。
+7. 目标领域的当前代码。
 
-Skill selection guide:
+技能选择指南：
 
-| Task type | Preferred skill file |
+| 任务类型 | 首选技能文件 |
 | --- | --- |
-| Reader or chapter reading feature | `docs/ai-skills/create-reading-feature.md` |
-| Backend API | `docs/ai-skills/create-backend-api.md` |
-| Django model/data change | `docs/ai-skills/create-django-model.md` |
-| Frontend page | `docs/ai-skills/create-frontend-page.md` |
-| Author workspace | `docs/ai-skills/create-author-feature.md` |
-| Admin/operations | `docs/ai-skills/create-admin-feature.md` |
-| Debug frontend | `docs/ai-skills/debug-frontend.md` |
-| Debug backend | `docs/ai-skills/debug-backend.md` |
-| Refactor or workflow restructuring | `docs/ai-skills/refactor-module.md` |
+| 读者或章节阅读功能 | `docs/ai-skills/create-reading-feature.md` |
+| 后端 API | `docs/ai-skills/create-backend-api.md` |
+| Django 模型或数据变更 | `docs/ai-skills/create-django-model.md` |
+| 前端页面 | `docs/ai-skills/create-frontend-page.md` |
+| 作者工作台 | `docs/ai-skills/create-author-feature.md` |
+| 管理或运营功能 | `docs/ai-skills/create-admin-feature.md` |
+| 前端排障 | `docs/ai-skills/debug-frontend.md` |
+| 后端排障 | `docs/ai-skills/debug-backend.md` |
+| 重构或工作流调整 | `docs/ai-skills/refactor-module.md` |
 
-## 7. Work Item Template
+## 7. 工作项模板
 
-Use this template before implementation when a task is larger than a one-line fix.
+任务大于一行修复时，实施前使用以下模板：
 
 ```markdown
-## Iteration Work Item
+## 迭代工作项
 
-Title:
-Priority: P0 / P1 / P2 / P3
-Type: docs / feature / bugfix / refactor / test / infrastructure
-Primary role affected:
-Target domain:
+标题：
+优先级：P0 / P1 / P2 / P3
+类型：文档 / 功能 / 缺陷修复 / 重构 / 测试 / 基础设施
+主要影响角色：
+目标领域：
 
-### Goal
+### 目标
 
-### Non-goals
+### 非目标
 
-### Allowed Scope
+### 允许范围
 
-### Forbidden Scope
+### 禁止范围
 
-### Current Behavior
+### 当前行为
 
-### Desired Behavior
+### 期望行为
 
-### Backend Design
+### 后端设计
 
-- Models:
-- Selectors:
-- Services:
-- Serializers:
-- Views:
-- URLs:
-- Permissions:
-- Migration:
-- Audit log:
+- 模型：
+- 选择器：
+- 服务：
+- 序列化器：
+- 视图：
+- URL：
+- 权限：
+- 迁移：
+- 审计日志：
 
-### Frontend Design
+### 前端设计
 
-- Routes:
-- Components:
-- API wrappers:
-- State handling:
-- Loading/empty/error/forbidden:
-- Mobile behavior:
+- 路由：
+- 组件：
+- API 封装：
+- 状态处理：
+- 加载、空态、错误、无权限：
+- 移动端行为：
 
-### API Contract
+### API 契约
 
-- Endpoints:
-- Request fields:
-- Response fields:
-- Pagination:
-- Error cases:
+- 接口：
+- 请求字段：
+- 响应字段：
+- 分页：
+- 错误情况：
 
-### Acceptance Criteria
-
-- [ ]
-
-### Verification
-
-- Backend:
-- Frontend:
-- Manual:
-
-### Documentation Updates
+### 验收标准
 
 - [ ]
 
-### Rollback Or Failure Handling
+### 验证
+
+- 后端：
+- 前端：
+- 手工：
+
+### 文档更新
+
+- [ ]
+
+### 回滚或失败处理
 ```
 
-## 8. Definition Of Ready
+## 8. 准入定义
 
-A work item is ready for implementation only when:
+工作项只有满足以下条件才可进入实施：
 
-- Goal and non-goals are explicit.
-- Allowed and forbidden scope are explicit.
-- User role and permission impact are known.
-- API route, method, request, response, and error behavior are known when applicable.
-- Model and migration impact are known when applicable.
-- UI states are known when applicable.
-- Verification commands and manual checks are listed.
-- Rollback or failure handling is understood for risky changes.
+- 目标与非目标明确。
+- 允许范围与禁止范围明确。
+- 已知用户角色与权限影响。
+- 适用时已知 API 路由、方法、请求、响应与错误行为。
+- 适用时已知模型与迁移影响。
+- 适用时已知 UI 状态。
+- 已列出验证命令和手工检查。
+- 高风险变更的回滚或失败处理已明确。
 
-## 9. Design Rules
+## 9. 设计规则
 
-### Backend
+### 后端
 
-Follow the existing Django app layering:
+遵循现有 Django 应用分层：
 
 ```text
 views -> serializers/services/selectors -> models
 ```
 
-Rules:
+- 视图保持精简。
+- 序列化器负责输入校验与输出结构。
+- 选择器负责查询与读取模式。
+- 服务负责写操作与业务行为。
+- 权限检查必须在服务端执行，不能只依赖前端。
+- 模型变更必须包含迁移与回滚风险说明。
+- 管理员、审核员、作者与读者边界必须经过测试或手工验证。
 
-- Views should stay thin.
-- Serializers validate input and shape output.
-- Selectors own query/read patterns.
-- Services own write/business behavior.
-- Permission checks must be server-side, not frontend-only.
-- Model changes require migrations and rollback risk notes.
-- Admin, reviewer, author, and reader boundaries must be tested or manually verified.
+### 前端
 
-### Frontend
-
-Follow the existing Next.js structure under `apps/web`:
+遵循 `apps/web` 下的现有 Next.js 结构：
 
 ```text
 app -> feature/page logic -> shared components/lib
 ```
 
-Rules:
+- 页面负责数据加载与工作流状态。
+- 共享视觉组件不得执行隐藏的 API 调用。
+- API 调用应使用现有请求封装。
+- 受保护页面必须处理登录与无权限状态。
+- 每个新页面或主要工作流必须处理加载、空态、错误与无权限状态。
+- 读者与管理端工作流必须考虑移动端行为。
 
-- Pages own data loading and workflow state.
-- Shared visual components should not make hidden API calls.
-- API calls should use the existing request wrapper.
-- Protected pages need login/forbidden handling.
-- Every new page or major workflow needs loading, empty, error, and forbidden states.
-- Mobile behavior must be considered for reader and admin workflows.
+### API 与数据
 
-### API And Data
+- 除非独立迁移任务另有说明，否则保留 `/api/` 路由。
+- 保留 `{ code, message, data }` 响应封装。
+- 除非独立迁移任务另有说明，否则保留当前分页结构。
+- 新响应字段应尽量采用向后兼容的增量方式添加。
+- 不得泄露密码、令牌、手机号和邮箱等敏感字段。
+- 创建、更新、删除、发布、审核和管理操作影响业务状态时应记录审计日志。
 
-Rules:
+## 10. 风险门禁
 
-- Preserve `/api/` routes unless a migration task says otherwise.
-- Preserve `{ code, message, data }` response envelope.
-- Preserve current pagination shape unless a migration task says otherwise.
-- New response fields should be additive when possible.
-- Sensitive fields such as password, token, phone, and email must not leak.
-- Create/update/delete/publish/review/admin actions should create audit logs when they affect business state.
+执行以下操作前必须停止并请求明确批准：
 
-## 10. Risk Gates
+- 修改 API 响应封装或路由前缀。
+- 重命名或删除现有路由。
+- 删除或重命名数据库字段。
+- 执行破坏性迁移或数据清理。
+- 修改身份认证或令牌存储策略。
+- 增加支付、权益、钱包或会员行为。
+- 增加会改变环境的生产部署或 CI 行为。
+- 引入会持久化密钥的新外部 AI 或媒体服务商。
+- 存储用户提供的 API Key 或敏感服务商密钥。
+- 执行脚手架或初始化命令。
+- 大范围重写请求范围之外的文件。
 
-Stop and ask for explicit approval before doing any of these:
+## 11. 实施规则
 
-- Changing the API envelope or route prefix.
-- Renaming or deleting an existing route.
-- Removing or renaming database fields.
-- Running destructive migrations or data cleanup.
-- Changing auth/token storage strategy.
-- Adding payment, entitlement, wallet, or membership behavior.
-- Adding production deployment or CI behavior that changes environments.
-- Introducing a new external AI/media provider with persisted keys.
-- Storing user-provided API keys or sensitive provider secrets.
-- Running scaffold/init commands.
-- Broadly rewriting files outside the requested scope.
+实施期间：
 
-## 11. Implementation Rules
+1. 将变更限制在目标工作项内。
+2. 优先复用现有模式，不随意引入新抽象。
+3. 只有在确实减少重复或复杂度时才增加抽象。
+4. 保持现有命名、响应封装、路由结构与权限模型。
+5. 行为、权限、模型或共享契约变化时增加或更新测试。
+6. 禁止机会式重构。
+7. 最终汇报不得隐藏失败检查。
+8. 指导文档、规则、技能和提示模板的说明文字必须使用简体中文。
 
-During implementation:
+## 12. 调试循环
 
-1. Keep changes limited to the target work item.
-2. Prefer existing patterns over new abstractions.
-3. Add abstractions only when they reduce real duplication or complexity.
-4. Preserve existing naming, response envelope, route shape, and permission model.
-5. Add or update tests when behavior, permissions, models, or shared contracts change.
-6. Avoid opportunistic refactors.
-7. Do not hide failed checks in the final report.
-
-## 12. Debug Loop
-
-When verification fails:
+验证失败时：
 
 ```mermaid
 flowchart TD
-  A[Failure] --> B[Capture command and exact error]
-  B --> C[Classify layer]
-  C --> D{Layer}
-  D -- Frontend --> E[Fix type, hook, import, render, or route issue]
-  D -- Backend --> F[Fix settings, import, serializer, service, model, or URL issue]
-  D -- API --> G[Trace request -> URL -> view -> serializer -> service -> model]
-  D -- Permission --> H[Verify role, token, ownership, and server-side checks]
-  D -- Data --> I[Check migration, seed data, constraint, and query behavior]
-  E --> J[Re-run failed check]
+  A[验证失败] --> B[记录命令与准确错误]
+  B --> C[判断故障层级]
+  C --> D{故障层级}
+  D -- 前端 --> E[修复类型、Hook、导入、渲染或路由问题]
+  D -- 后端 --> F[修复配置、导入、序列化器、服务、模型或 URL 问题]
+  D -- API --> G[追踪 request -> URL -> view -> serializer -> service -> model]
+  D -- 权限 --> H[核对角色、令牌、所有权与服务端检查]
+  D -- 数据 --> I[检查迁移、种子数据、约束与查询行为]
+  E --> J[重新执行失败检查]
   F --> J
   G --> J
   H --> J
   I --> J
-  J --> K{Pass?}
-  K -- No --> B
-  K -- Yes --> L[Continue workflow]
+  J --> K{是否通过}
+  K -- 否 --> B
+  K -- 是 --> L[继续工作流]
 ```
 
-The debug loop should fix the smallest cause of failure. It should not expand into a broad rewrite unless the work item is explicitly re-scoped.
+调试循环应修复最小故障原因。除非工作项明确重新划定范围，否则不得扩展为大范围重写。
 
-## 13. Verification Gates
+## 13. 验证门禁
 
-### Docs-only
+### 纯文档任务
 
-Required:
+必须执行：
 
 ```powershell
 Get-ChildItem docs\spec-coding
 ```
 
-Recommended:
+建议执行：
 
-- Re-read changed Markdown.
-- Check headings, tables, code blocks, and Mermaid blocks.
-- Confirm no code/API behavior was changed.
+- 重新阅读变更后的 Markdown。
+- 检查标题、表格、代码块和 Mermaid 图表。
+- 确认没有改变代码或 API 行为。
+- 确认提示类文档说明文字使用简体中文。
 
-### Backend-only
+### 纯后端任务
 
-Required:
+必须执行：
 
 ```powershell
 cd services/api
 .\.venv\Scripts\python.exe manage.py check
 ```
 
-If no model change is expected:
+不应发生模型变化时执行：
 
 ```powershell
 .\.venv\Scripts\python.exe manage.py makemigrations --check --dry-run
 ```
 
-If models changed:
+模型发生变化时执行：
 
 ```powershell
 .\.venv\Scripts\python.exe manage.py makemigrations
 .\.venv\Scripts\python.exe manage.py migrate
 ```
 
-If API behavior changed:
+API 行为发生变化时执行：
 
 ```powershell
 .\.venv\Scripts\python.exe manage.py test common --noinput
 ```
 
-Add domain-specific tests when the change is not covered by `common`.
+如果 `common` 未覆盖该变更，应增加并执行领域测试。
 
-### Frontend-only
+### 纯前端任务
 
-Required:
+必须执行：
 
 ```powershell
 cd apps/web
@@ -375,158 +367,156 @@ npx.cmd tsc --noEmit --incremental false
 npm.cmd run lint
 ```
 
-If routes, layouts, build-time code, or shared UI changed:
+路由、布局、构建时代码或共享 UI 发生变化时执行：
 
 ```powershell
 npm.cmd run build
 ```
 
-Manual checks:
+手工检查：
 
-- Open affected page.
-- Confirm loading, empty, error, and forbidden states when applicable.
-- Check mobile layout for reader and admin-heavy workflows.
+- 打开受影响页面。
+- 适用时确认加载、空态、错误与无权限状态。
+- 检查读者与管理密集页面的移动端布局。
 
-### Full-stack
+### 全栈任务
 
-Required:
+必须执行：
 
-- Backend gates.
-- Frontend gates.
-- Manual browser/API flow.
-- Role boundary check.
-- API envelope check.
-- Documentation update.
+- 后端门禁。
+- 前端门禁。
+- 手工浏览器或 API 流程。
+- 角色边界检查。
+- API 响应封装检查。
+- 文档更新。
 
-### AI, Media, Or Long-Running Jobs
+### AI、媒体或长时间任务
 
-Required design checks before implementation:
+实施前必须检查：
 
-- Provider boundary: which service is called and where credentials live.
-- Cost and quota behavior.
-- Async job lifecycle.
-- Retry and failure states.
-- Storage location and cleanup policy.
-- Content safety and copyright/moderation policy.
-- Audit and usage logs.
+- 服务商边界：调用哪个服务，凭据保存在何处。
+- 成本与配额行为。
+- 异步任务生命周期。
+- 重试与失败状态。
+- 存储位置与清理策略。
+- 内容安全、版权或审核策略。
+- 审计与用量日志。
 
-For a future short-video generation feature, the first accepted implementation should verify a narrow path before generating real video, for example:
+短视频生成功能的首个可接受实现应先验证窄链路：
 
 ```text
-input text -> structured story analysis -> storyboard scenes -> saved project draft
+输入文本 -> 结构化故事分析 -> 分镜场景 -> 保存项目草稿
 ```
 
-Only after that path is stable should later iterations add image generation, TTS, subtitles, FFmpeg rendering, download, and provider-specific video generation.
+该链路稳定后，后续迭代再增加图片生成、TTS、字幕、FFmpeg 渲染、下载与服务商专用视频生成。
 
-## 14. Definition Of Done
+## 14. 完成定义
 
-An iteration is done only when:
+只有满足以下条件，迭代才可标记为完成：
 
-- The primary objective is met.
-- No forbidden scope was changed.
-- API and permission compatibility are preserved or explicitly migrated.
-- Required tests/checks were run, or skipped with a clear reason.
-- New failures are fixed or documented as residual risk.
-- Related docs are updated.
-- Final report includes changed files, verification results, and remaining risks.
+- 主要目标已实现。
+- 未修改禁止范围。
+- API 与权限兼容性已保持，或已通过独立迁移明确处理。
+- 已执行必需测试与检查；未执行项有明确原因。
+- 新故障已修复，或已记录为剩余风险。
+- 相关文档已更新。
+- 最终汇报包含变更文件、验证结果和剩余风险。
 
-## 15. Documentation Sync Matrix
+## 15. 文档同步矩阵
 
-Update docs in the same iteration as the code change:
+代码变更与文档必须在同一轮迭代中更新：
 
-| Change type | Documents to update |
+| 变更类型 | 需要更新的文档 |
 | --- | --- |
-| Current feature/page/API/model status changed | `01-current-state.md` |
-| Feature behavior or product requirement changed | `02-feature-spec.md` |
-| Priority, phase, or backlog changed | `03-roadmap.md` |
-| Development process changed | `04-development-flow.md` or this file |
-| Test command, test case, or verification rule changed | `05-testing-plan.md` |
-| API route, field, permission, model, or contract changed | `06-api-data-contract.md` |
-| Handoff format changed | `08-context-handoff-template.md` |
+| 当前功能、页面、API 或模型状态变化 | `01-current-state.md` |
+| 功能行为或产品要求变化 | `02-feature-spec.md` |
+| 优先级、阶段或待办变化 | `03-roadmap.md` |
+| 开发流程变化 | `04-development-flow.md` 或本文档 |
+| 测试命令、测试用例或验证规则变化 | `05-testing-plan.md` |
+| API 路由、字段、权限、模型或契约变化 | `06-api-data-contract.md` |
+| 交接格式变化 | `08-context-handoff-template.md` |
 
-For meaningful code iterations, update at least one relevant `docs/spec-coding` document unless the task is a tiny internal fix with no behavior or workflow impact.
+有实际意义的代码迭代应至少更新一份相关 `docs/spec-coding` 文档，微小且不改变行为或流程的内部修复除外。
 
-## 16. Backlog Triage
+## 16. 待办优先级
 
-Use this priority model:
-
-| Priority | Meaning | Examples |
+| 优先级 | 含义 | 示例 |
 | --- | --- | --- |
-| P0 | Blocks development correctness or basic usage. | Broken build, broken login, data loss risk, API envelope regression. |
-| P1 | Core product or operations capability. | Admin management, review workflow, author feedback, audit logs. |
-| P2 | Important improvement with manageable risk. | Reader UX polish, comment replies, author productivity, AI chat polish. |
-| P3 | Discovery or engagement expansion. | Search suggestions, recommendation, notifications. |
-| P4 | High-risk business/platform expansion. | Payment, membership, production deployment automation. |
+| P0 | 阻塞开发正确性或基本使用。 | 构建失败、登录失败、数据丢失风险、API 封装回归。 |
+| P1 | 核心产品或运营能力。 | 管理功能、审核流程、作者反馈、审计日志。 |
+| P2 | 风险可控的重要改进。 | 阅读体验优化、评论回复、作者效率、AI 对话优化。 |
+| P3 | 发现与互动扩展。 | 搜索建议、推荐、通知。 |
+| P4 | 高风险业务或平台扩展。 | 支付、会员、生产部署自动化。 |
 
-Selection rule:
+选择规则：
 
-1. Finish P0 stability before large feature work.
-2. Prefer single-item operations before bulk operations.
-3. Prefer auditability before business-critical admin actions.
-4. Prefer design/RFC before AI, media, payment, security, or data lifecycle features.
+1. 进行大型功能前先完成 P0 稳定性问题。
+2. 批量操作前优先完成单项操作。
+3. 关键管理操作前优先建立可审计性。
+4. AI、媒体、支付、安全或数据生命周期功能必须先完成设计或 RFC。
 
-## 17. Recommended Current Lanes
+## 17. 当前建议方向
 
-Based on the current project state, future iterations should usually come from these lanes:
+后续迭代通常应从以下方向选择：
 
-| Lane | Why |
+| 方向 | 原因 |
 | --- | --- |
-| Stability | Encoding cleanup, API docs, frontend smoke/E2E tests, backend domain tests. |
-| Operations | Remaining admin audit surfaces, bulk moderation, report queue. |
-| Author productivity | Server-side drafts, cover upload, bulk chapter import, author stats. |
-| Reader experience | Reader settings polish, table of contents drawer, comment replies, search improvements. |
-| AI/media design | AI chat streaming/RAG, novel-to-short-video RFC, cost/usage limits. |
-| Platform | Environment separation, CI, deployment docs, backup/restore. |
+| 稳定性 | 编码清理、API 文档、前端冒烟或 E2E 测试、后端领域测试。 |
+| 运营 | 剩余管理审计面、批量审核、举报队列。 |
+| 作者效率 | 服务端草稿、封面上传、章节批量导入、作者统计。 |
+| 读者体验 | 阅读设置优化、目录抽屉、评论回复、搜索改进。 |
+| AI 与媒体设计 | AI 对话流式输出或 RAG、小说转短视频 RFC、成本与用量限制。 |
+| 平台 | 环境隔离、CI、部署文档、备份与恢复。 |
 
-## 18. Iteration Log Template
+## 18. 迭代日志模板
 
-Append completed meaningful iterations in this format when useful:
+有需要时，按以下格式追加已完成的重要迭代：
 
 ```markdown
-### YYYY-MM-DD - Iteration Title
+### YYYY-MM-DD - 迭代标题
 
-Completed:
+已完成：
 
-- 
+-
 
-Verified:
+已验证：
 
-- 
+-
 
-Changed docs:
+已变更文档：
 
-- 
+-
 
-Remaining:
+剩余事项：
 
-- 
+-
 
-Next recommendation:
+下一步建议：
 
-- 
+-
 ```
 
-Do not use the iteration log as a replacement for updating `01-current-state.md`, `03-roadmap.md`, `05-testing-plan.md`, or `06-api-data-contract.md` when those documents are affected.
+迭代日志不能替代对 `01-current-state.md`、`03-roadmap.md`、`05-testing-plan.md` 或 `06-api-data-contract.md` 的必要更新。
 
-## 19. Final Report Format
+## 19. 最终汇报格式
 
-Each completed iteration should end with:
+每轮完成的迭代应使用以下格式结束：
 
 ```text
-Changed files:
-- ...
+变更文件：
+- ……
 
-What changed:
-- ...
+变更内容：
+- ……
 
-Verification:
-- ...
+验证结果：
+- ……
 
-Risks / remaining work:
-- ...
+风险与剩余工作：
+- ……
 
-Next recommended iteration:
-- ...
+下一轮建议：
+- ……
 ```
 
-If checks could not be run, say why and list the residual risk.
+无法执行检查时，必须说明原因并列出剩余风险。

@@ -73,7 +73,18 @@ Important mismatch:
 
 - `GET /api/video-projects/`
 - `POST /api/video-projects/`
+- `GET /api/video-source-chapters/`
+- `POST /api/video-projects/from-chapter/`
+- `POST /api/video-projects/story-draft/`
+- `GET /api/video-projects/capabilities/`
 - `GET /api/video-projects/{id}/`
+- `POST /api/video-projects/{id}/storyboard/`
+- `POST /api/video-projects/{id}/storyboard/ai/`
+- `POST /api/video-projects/{id}/storyboard/jobs/`
+- `GET /api/video-projects/{id}/storyboard/jobs/latest/`
+- `PATCH /api/video-projects/{id}/scenes/{scene_id}/`
+- `GET /api/video-generation-jobs/{id}/`
+- `POST /api/video-generation-jobs/{id}/retry/`
 - `DELETE /api/video-projects/{id}/`
 
 ### Author APIs
@@ -157,6 +168,9 @@ Legacy or overlapping review APIs also exist under `/api/admin/novels/pending/`,
 - `/profile`
 - `/bookshelf`
 - `/history`
+- `/video-projects`
+- `/video-projects/create`
+- `/video-projects/[id]`
 
 ### Author
 
@@ -206,7 +220,7 @@ User-facing label has been adjusted toward “运营后台”; route remains `/a
 | Comments | Public list, logged-in create, own delete, admin moderation. |
 | Ratings | Summary, create/update own rating, delete own rating. |
 | AI chat | First-pass OpenAI-compatible chat proxy and frontend chat panel on novel detail / chapter reading pages. |
-| Short video generation | Backend first pass for text-sourced private video projects: project/scene models, create/list/detail/delete APIs, admin list/detail, audit logs, and smoke tests. No AI storyboard or media rendering yet. |
+| Short video generation | Text and permission-checked chapter sources, local and provider-backed storyboards, durable jobs, polling/retry UI, stale-job recovery worker, editable scenes, and frontend list/create/detail pages. No media rendering yet. |
 | Author workspace | Novel create/edit/submit, chapter create/edit/submit, local chapter draft recovery, chapter reading preview, list/detail pages, review history and rejection feedback. |
 | Review workflow | Reviewer role, pending/reviewing lists, claim, approve, reject, audit logs. |
 | Admin user management | List/detail, role update, ban/unban. |
@@ -221,7 +235,7 @@ User-facing label has been adjusted toward “运营后台”; route remains `/a
 | Area | Gap |
 | --- | --- |
 | Media | Frontend now has a local default cover fallback; backend seed data may still contain fake external cover URLs; upload/media storage is not designed. |
-| Short video generation | Backend project skeleton exists for pasted text only; AI storyboard generation, chapter source integration, frontend pages, assets, rendering, quota, and moderation are not implemented yet. |
+| Short video generation | Chapter source integration is complete for public approved chapters and author-owned drafts; whole-novel aggregation, provider-backed story drafting, media assets, rendering, quota, and moderation remain open. |
 | Search | No dedicated search index, highlight, suggestions, hot keywords, typo tolerance. |
 | AI chat | First pass is non-streaming and user-supplied-key only; no server-side provider config, embeddings, RAG index, prompt templates per genre, or usage metering. |
 | Categories | Admin category backend and frontend first pass exists; deeper validation tests remain open. |

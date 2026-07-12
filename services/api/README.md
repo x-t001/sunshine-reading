@@ -1,9 +1,10 @@
-﻿# Sunshine Reading API
+# Sunshine Reading API 服务
 
-后端服务目录（`services/api`），使用 Django + Django REST Framework。
+后端服务目录为 `services/api`，使用 Django 与 Django REST Framework。
 
 当前阶段说明：
+
 - 仅完成后端骨架初始化。
-- 已提供统一响应工具与 health check 接口。
-- 未开发小说、章节、书架等业务接口。
-- 未接入真实 PostgreSQL/Redis，仅保留目标配置。
+- 已提供统一响应工具与健康检查接口。
+- 尚未开发小说、章节、书架等业务接口。
+- 尚未接入真实 PostgreSQL 或 Redis，仅保留目标配置。

@@ -287,10 +287,19 @@ Future endpoint draft:
 | Method | Endpoint | Permission | Purpose |
 | --- | --- | --- | --- |
 | `POST` | `/api/video-projects/` | logged-in user | Create a project from text or source content. |
+| `GET` | `/api/video-source-chapters/` | logged-in user | List public or owned chapters available as sources. |
+| `POST` | `/api/video-projects/from-chapter/` | logged-in user | Create a project from an accessible chapter snapshot. |
 | `GET` | `/api/video-projects/` | owner/admin | List own projects. |
+| `GET` | `/api/video-projects/capabilities/` | logged-in user | Inspect server-side generation availability without exposing secrets. |
 | `GET` | `/api/video-projects/{id}/` | owner/admin | Get project detail and scenes. |
 | `POST` | `/api/video-projects/{id}/analyze/` | owner/admin | Generate story analysis. |
 | `POST` | `/api/video-projects/{id}/storyboard/` | owner/admin | Generate storyboard scenes. |
+| `POST` | `/api/video-projects/{id}/storyboard/ai/` | owner/admin | Generate structured scenes with the server-configured AI provider. |
+| `POST` | `/api/video-projects/{id}/storyboard/jobs/` | owner/admin | Queue a durable AI storyboard job. |
+| `GET` | `/api/video-projects/{id}/storyboard/jobs/latest/` | owner/admin | Restore the latest project job state. |
+| `GET` | `/api/video-generation-jobs/{id}/` | owner/admin | Poll one durable generation job. |
+| `POST` | `/api/video-generation-jobs/{id}/retry/` | owner/admin | Requeue a failed job within its attempt limit. |
+| `PATCH` | `/api/video-projects/{id}/scenes/{scene_id}/` | owner/admin | Edit one generated storyboard scene. |
 | `POST` | `/api/video-scenes/{id}/regenerate/` | owner/admin | Regenerate one scene. |
 | `POST` | `/api/video-projects/{id}/render/` | owner/admin | Start final render in a later phase. |
 | `GET` | `/api/video-render-jobs/{id}/` | owner/admin | Poll long-running job state. |
@@ -497,33 +506,121 @@ Acceptance:
 - Admin can inspect projects. Completed.
 - Smoke tests cover create/list/detail/admin visibility/unsafe input/soft delete audit. Completed.
 
-### Iteration 3: AI Storyboard Generation
+### Iteration 2.5: User-Facing Project Pages
+
+Status: first frontend pass completed.
 
 Deliverable:
 
-- Server-side provider config.
-- Story analysis and scene generation service.
-- Job status and retry for analysis/storyboard.
+- `/video-projects` list page for logged-in users. Completed.
+- `/video-projects/create` pasted-text project creation page. Completed.
+- `/video-projects/[id]` detail/delete page with scene placeholders. Completed.
+- Homepage, desktop navigation, and mobile bottom navigation entry points. Completed.
 
 Acceptance:
 
-- Text input generates 4-8 scenes.
-- Failures are visible and retryable.
-- Provider secrets are not exposed or stored from user input.
+- User can find the short-video section from the homepage or navigation. Completed.
+- Frontend typecheck and lint pass. Completed.
+
+### Iteration 2.55: Local Story Draft Generation
+
+Status: first local story draft pass completed.
+
+Deliverable:
+
+- `POST /api/video-projects/story-draft/` endpoint. Completed.
+- Generate a 500-3000 character story draft from a short idea, genre, tone, and duration target. Completed.
+- Frontend create-page story draft panel that fills project title and input text. Completed.
+- No external provider call and no user-supplied provider secret. Preserved.
+
+Acceptance:
+
+- Logged-in users can generate a valid project input text from a short idea. Completed.
+- Unsafe prompt payloads are rejected. Completed.
+- Generated text can immediately seed `POST /api/video-projects/`. Completed.
+
+### Iteration 2.6: Local Storyboard Generation
+
+Status: first local storyboard pass completed.
+
+Deliverable:
+
+- `POST /api/video-projects/{id}/storyboard/` endpoint. Completed.
+- Deterministic 4-8 scene draft generation from pasted text. Completed.
+- Scene duration allocation, visual prompt, narration, subtitle, mood, and camera direction fields. Completed.
+- Frontend detail-page generate/regenerate action and scene cards. Completed.
+- Status update to `storyboard_ready` and audit log. Completed.
+
+Acceptance:
+
+- Text input generates 4-8 reviewable scenes without external provider calls. Completed.
+- Owners can generate their own projects; other readers receive not-found/denied behavior. Completed.
+- Deleted projects cannot generate storyboards. Completed.
+
+### Iteration 2.7: Storyboard Scene Editing
+
+Status: first scene editing pass completed.
+
+Deliverable:
+
+- `PATCH /api/video-projects/{id}/scenes/{scene_id}/` endpoint. Completed.
+- Editable title, visual prompt, narration, subtitle, duration, camera direction, and mood. Completed.
+- Frontend per-scene edit/save/cancel workflow. Completed.
+- Owner/admin permission checks, unsafe text validation, duration validation, and audit log. Completed.
+
+Acceptance:
+
+- Owners can revise generated scenes and see the saved result immediately. Completed.
+- Other readers receive not-found behavior. Completed.
+- Storyboard total duration remains within 30-90 seconds. Completed.
+
+### Iteration 3: Provider-Backed AI Storyboard Generation
+
+Status: provider-backed storyboard generation and durable jobs completed; synchronous endpoint retained for compatibility.
+
+Deliverable:
+
+- Server-side provider config. Completed.
+- OpenAI-compatible structured storyboard generation service. Completed.
+- Capability endpoint and frontend AI/local generation controls. Completed.
+- Analyzing/failed status, retry path, structured validation, and provider usage audit. Completed.
+- Durable queued job status, polling, bounded retry, and stale-job recovery. Completed.
+
+Acceptance:
+
+- Text input generates 4-8 scenes. Completed with mocked provider integration tests.
+- Failures are visible and retryable without destroying existing scenes. Completed.
+- Provider secrets are not exposed or stored from user input. Completed.
+
+### Iteration 3.2: Durable AI Storyboard Jobs
+
+Status: completed.
+
+Deliverable:
+
+- `VideoGenerationJob` persistence with one active job per project. Completed.
+- Queue, latest-job, detail polling, and retry APIs. Completed.
+- Database worker command with PostgreSQL row locking and stale-job recovery. Completed.
+- Frontend queued/running/succeeded/failed state and automatic polling. Completed.
+- Job audit events and maximum-attempt enforcement. Completed.
 
 ### Iteration 4: Chapter Source Integration
 
+Status: completed.
+
 Deliverable:
 
-- Create from public approved chapter.
-- Create from author-owned chapter/draft.
-- Source access checks.
+- Create from public approved chapter. Completed.
+- Create from author-owned chapter/draft. Completed.
+- Admin source access. Completed.
+- Searchable frontend source selection and chapter-page entry links. Completed.
+- Source access checks, bounded snapshot, hash, and audit log. Completed.
 
 Acceptance:
 
-- Readers cannot use hidden/private chapters.
-- Authors can use their own drafts.
-- Admin can inspect all projects.
+- Readers cannot use hidden/private chapters. Completed.
+- Authors can use their own drafts. Completed.
+- Admin can create and inspect all projects. Completed.
 
 ### Iteration 5: Image, Voice, And Subtitle Assets
 
@@ -631,10 +728,10 @@ These decisions must be resolved before implementation beyond storyboard-only MV
 Next recommended iteration:
 
 ```text
-Iteration 3 - AI Storyboard Generation
+Iteration 4.5 - Whole-Novel Source Integration
 ```
 
 Reason:
 
-- The project ownership, source validation, status lifecycle, API envelope, migrations, and smoke tests are now in place for text-sourced drafts.
-- The next useful slice is a server-side storyboard generator that produces 4-8 draft scenes without introducing image/audio/video rendering yet.
+- Durable AI storyboard jobs and permission-checked chapter source creation are now in place.
+- The next useful slice is selecting and combining bounded chapter ranges from a public or author-owned novel before entering image/audio generation.

@@ -1,34 +1,34 @@
-# Context Handoff Template
+# 上下文交接模板
 
-Use this file when a conversation becomes too long, a new session starts, or another developer/AI needs to continue work.
+当会话过长、开始新会话，或其他开发者与 AI 需要继续工作时，使用此模板。
 
-## 1. Project Snapshot
+## 1. 项目快照
 
-Date:
+日期：
 
-Branch / workspace state:
+分支或工作区状态：
 
-Current objective:
+当前目标：
 
-Recent completed work:
+最近完成的工作：
 
-Relevant changed files:
+相关变更文件：
 
-## 2. Current Task Boundary
+## 2. 当前任务边界
 
-Allowed files/areas:
+允许修改的文件或区域：
 
-Forbidden files/areas:
+禁止修改的文件或区域：
 
-Forbidden actions:
+禁止执行的动作：
 
-Assumptions:
+假设：
 
-Open questions:
+待确认问题：
 
-## 3. Relevant Rules And Skills
+## 3. 相关规则与技能
 
-Rules loaded:
+已加载规则：
 
 - [ ] `.cursor/rules/00-project-overview.mdc`
 - [ ] `.cursor/rules/01-frontend-nextjs.mdc`
@@ -39,59 +39,59 @@ Rules loaded:
 - [ ] `.cursor/rules/06-security-permission.mdc`
 - [ ] `.cursor/rules/07-ai-working-mode.mdc`
 
-Skill selected:
+已选择技能：
 
-Checklist applied:
+已执行的检查清单：
 
-## 4. Feature State
+## 4. 功能状态
 
-What works:
+已正常工作的内容：
 
-What is partially implemented:
+部分完成的内容：
 
-What is not implemented:
+尚未实现的内容：
 
-Known bugs:
+已知缺陷：
 
-Known risks:
+已知风险：
 
-## 5. API / Data Notes
+## 5. API 与数据说明
 
-Endpoints involved:
+相关接口：
 
-Request examples:
+请求示例：
 
-Response examples:
+响应示例：
 
-Models involved:
+相关模型：
 
-Migration needed:
+是否需要迁移：
 
-Rollback notes:
+回滚说明：
 
-## 6. Test Evidence
+## 6. 测试证据
 
-Commands run:
+已执行命令：
 
 ```powershell
 
 ```
 
-Results:
+执行结果：
 
-Manual checks:
+手工检查：
 
-Failed checks:
+失败检查：
 
-## 7. Next Recommended Steps
+## 7. 下一步建议
 
 1.
 2.
 3.
 
-## 8. Final Handoff Summary
+## 8. 最终交接摘要
 
-Short summary for next session:
+供下一会话使用的简短摘要：
 
 ```text
 

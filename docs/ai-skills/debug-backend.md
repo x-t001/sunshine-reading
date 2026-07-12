@@ -1,27 +1,25 @@
-﻿# Skill: Debug Backend / 后端 Bug 排查
+# 技能：排查后端缺陷
 
-## Purpose / 目的
-- Locate backend failures across validation, permission, service logic, and data layer.
-- 覆盖校验、权限、服务逻辑、数据层的后端故障定位。
+## 目的
+- 定位请求校验、权限、服务逻辑和数据层中的后端故障。
 
-## Inputs / 输入
-- Error log and request_id / 错误日志与 request_id
-- Failing endpoint / 失败接口
-- Suspected recent change / 可疑近期改动
+## 输入
+- 错误日志与 `request_id`
+- 失败接口
+- 可疑的近期改动
 
-## Steps / 步骤
-1. Reproduce failure using original request payload and actor role. / 使用原始请求与角色复现失败。
-2. Trace flow: view -> serializer -> service -> model/query. / 追踪链路：view -> serializer -> service -> model/query。
-3. Check permission matrix and input validation before business logic. / 在业务逻辑前检查权限矩阵与输入校验。
-4. Verify DB constraints/index impacts if issue is performance or integrity related. / 若涉及性能或完整性，检查数据库约束与索引影响。
-5. Implement minimal fix, then verify with success/fail/forbidden/not-found tests. / 最小修复后用成功/失败/无权限/不存在用例验证。
+## 步骤
+1. 使用原始请求数据与操作角色复现故障。
+2. 按 `view -> serializer -> service -> model/query` 追踪调用链路。
+3. 在检查业务逻辑前，先核对权限矩阵与输入校验。
+4. 如果问题涉及性能或完整性，检查数据库约束与索引影响。
+5. 实施最小修复，并使用成功、失败、无权限和资源不存在用例进行验证。
 
-## Output / 产出
-- Backend bug diagnosis and fix verification checklist.
+## 产出
 - 后端缺陷诊断与修复验证清单。
 
-## Checklist / 检查清单
-- [ ] Failure boundary identified / 失败边界已定位
-- [ ] Permission and validation checked / 权限与校验已检查
-- [ ] Data-layer impact reviewed / 数据层影响已评估
-- [ ] Regression tests executed / 回归测试已执行
+## 检查清单
+- [ ] 已定位故障边界。
+- [ ] 已检查权限与校验。
+- [ ] 已评估数据层影响。
+- [ ] 已执行回归测试。

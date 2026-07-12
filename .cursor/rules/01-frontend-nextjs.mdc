@@ -1,36 +1,34 @@
-﻿---
-description: Frontend architecture and folder layering constraints
+---
+description: 前端架构与目录分层约束
 alwaysApply: true
 ---
 
-# 01 Frontend Next.js Rule / 前端 Next.js 规则
+# 01 前端 Next.js 规则
 
-## Purpose / 目的
-- Define strict frontend layering and directory contract for future implementation.
-- 为未来前端实现定义严格分层与目录契约。
+## 目的
+- 为未来前端实现定义严格的分层与目录契约。
 
-## Inputs / 输入
-- Page requirement / 页面需求
-- API contract / API 合同
-- UI style rule / UI 风格规则
+## 输入
+- 页面需求
+- API 契约
+- UI 风格规则
 
-## Steps / 步骤
-1. Use planned frontend structure only:
-   - `frontend/src/app` (routes) / 路由
-   - `frontend/src/features` (feature modules) / 功能模块
-   - `frontend/src/components` (shared UI) / 通用组件
-   - `frontend/src/lib` (api client/utils) / 基础库
-2. Enforce layering: `app -> features -> components/lib`; reverse imports are forbidden. / 强制分层：`app -> features -> components/lib`，禁止反向依赖。
-3. Keep data fetching in feature/application layer, not shared presentational components. / 数据获取放在功能或应用层，展示组件禁止直接取数。
-4. Every page must define loading/empty/error states and permission fallback. / 每个页面必须定义加载/空态/错误态及权限兜底。
-5. Do not execute Next.js scaffold/init commands in current stage. / 当前阶段禁止执行 Next.js 初始化命令。
+## 步骤
+1. 仅使用规划的前端结构：
+   - `frontend/src/app`：路由
+   - `frontend/src/features`：功能模块
+   - `frontend/src/components`：通用 UI 组件
+   - `frontend/src/lib`：API 客户端与工具库
+2. 强制遵循 `app -> features -> components/lib` 分层，禁止反向依赖。
+3. 数据获取必须放在功能层或应用层，共享展示组件不得直接请求数据。
+4. 每个页面必须定义加载、空态、错误态及权限兜底。
+5. 当前阶段禁止执行 Next.js 脚手架或初始化命令。
 
-## Output / 产出
-- Frontend implementation blueprint with enforceable layering.
+## 产出
 - 可执行的前端分层蓝图。
 
-## Checklist / 检查清单
-- [ ] Folder structure contract is followed. / 目录契约已遵循。
-- [ ] Layer dependency direction is valid. / 分层依赖方向正确。
-- [ ] State handling is complete. / 状态处理完整。
-- [ ] No Next.js initialization executed. / 未执行 Next.js 初始化。
+## 检查清单
+- [ ] 已遵循目录契约。
+- [ ] 分层依赖方向正确。
+- [ ] 状态处理完整。
+- [ ] 未执行 Next.js 初始化。

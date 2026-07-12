@@ -1,32 +1,30 @@
-﻿---
-description: Permission model, input security, and audit constraints
+---
+description: 权限模型、输入安全与审计约束
 alwaysApply: true
 ---
 
-# 06 Security Permission Rule / 安全与权限规则
+# 06 安全与权限规则
 
-## Purpose / 目的
-- Enforce role-based access and secure handling for all interfaces.
-- 强制角色访问控制与安全数据处理。
+## 目的
+- 对所有接口强制执行基于角色的访问控制与安全数据处理。
 
-## Inputs / 输入
-- Roles / 角色
-- Resource operations / 资源操作
-- Threat assumptions / 威胁假设
+## 输入
+- 角色
+- 资源操作
+- 威胁假设
 
-## Steps / 步骤
-1. Use role baseline: `reader`, `author`, `admin`; default deny for undefined roles. / 采用 `reader`、`author`、`admin` 角色基线，未定义角色默认拒绝。
-2. Build endpoint permission matrix: action -> allowed roles -> validation rule. / 为每个接口建立权限矩阵：动作 -> 允许角色 -> 校验规则。
-3. Validate and sanitize all external input; reject unsafe HTML/script payloads. / 校验并清洗外部输入，拒绝危险 HTML/脚本内容。
-4. Mask sensitive fields (`password`, `token`, `phone`, `email`) in logs and traces. / 日志链路中脱敏敏感字段。
-5. Record audit events for create/update/delete/publish/permission-change actions. / 对增删改发布与权限变更记录审计事件。
+## 步骤
+1. 使用 `reader`、`author`、`admin` 作为角色基线，未定义角色默认拒绝访问。
+2. 为每个接口建立“动作 -> 允许角色 -> 校验规则”的权限矩阵。
+3. 校验并清洗所有外部输入，拒绝危险的 HTML 或脚本内容。
+4. 在日志和链路追踪中脱敏 `password`、`token`、`phone`、`email` 等敏感字段。
+5. 对创建、更新、删除、发布和权限变更操作记录审计事件。
 
-## Output / 产出
-- A concrete permission and security execution baseline.
-- 可直接落地的权限与安全基线。
+## 产出
+- 可直接落地的权限与安全执行基线。
 
-## Checklist / 检查清单
-- [ ] Permission matrix is complete. / 权限矩阵完整。
-- [ ] Input validation/sanitization is enforced. / 输入校验与清洗已执行。
-- [ ] Sensitive data masking is enabled. / 敏感数据脱敏已启用。
-- [ ] Audit events are defined for critical actions. / 关键动作审计事件已定义。
+## 检查清单
+- [ ] 权限矩阵完整。
+- [ ] 已执行输入校验与清洗。
+- [ ] 已启用敏感数据脱敏。
+- [ ] 已定义关键操作的审计事件。

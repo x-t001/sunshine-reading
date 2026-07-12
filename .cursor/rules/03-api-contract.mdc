@@ -1,37 +1,35 @@
-﻿---
-description: Mandatory API response envelope and contract discipline
+---
+description: 强制 API 响应封装与契约规范
 alwaysApply: true
 ---
 
-# 03 API Contract Rule / API 合同规则
+# 03 API 契约规则
 
-## Purpose / 目的
-- Enforce one deterministic API format for frontend-backend collaboration.
-- 强制前后端统一且确定的 API 返回格式。
+## 目的
+- 强制前后端使用统一且确定的 API 返回格式。
 
-## Inputs / 输入
-- Endpoint definition / 接口定义
-- Request schema / 请求结构
-- Business result / 业务结果
+## 输入
+- 接口定义
+- 请求结构
+- 业务结果
 
-## Steps / 步骤
-1. Define endpoint as `/api/v1/<resource>` with explicit method and permission. / 接口统一采用 `/api/v1/<resource>`，明确方法与权限。
-2. Request body/query/path fields must include type, required, default, and constraints. / 请求参数必须包含类型、必填、默认值、约束。
-3. Use unified response envelope:
-   - Success / 成功:
+## 步骤
+1. 接口统一采用 `/api/v1/<resource>`，并明确请求方法与权限。
+2. 请求体、查询参数和路径参数必须说明类型、是否必填、默认值与约束。
+3. 使用统一响应封装：
+   - 成功：
      `{ "code": 0, "message": "ok", "data": <payload>, "request_id": "<id>" }`
-   - Failure / 失败:
+   - 失败：
      `{ "code": <non_zero>, "message": "<error>", "errors": [ { "field": "<name>", "reason": "<msg>" } ], "request_id": "<id>" }`
-4. List endpoints must return pagination object:
-   `{ "page": 1, "page_size": 20, "total": 100, "items": [] }` inside `data`. / 列表接口必须在 `data` 内返回分页对象。
-5. Keep error codes stable and documented; do not reuse one code for unrelated errors. / 错误码必须稳定并文档化，禁止一号多义。
+4. 列表接口必须在 `data` 内返回分页对象：
+   `{ "page": 1, "page_size": 20, "total": 100, "items": [] }`
+5. 错误码必须稳定并文档化，禁止将同一个错误码用于无关错误。
 
-## Output / 产出
-- Stable and machine-readable API contracts.
-- 稳定且机器可读的 API 合同。
+## 产出
+- 稳定且机器可读的 API 契约。
 
-## Checklist / 检查清单
-- [ ] URL versioning is present. / URL 版本化存在。
-- [ ] Response envelope matches rule exactly. / 响应封装严格一致。
-- [ ] Pagination schema is standardized. / 分页结构标准化。
-- [ ] Error codes are deterministic. / 错误码确定且不冲突。
+## 检查清单
+- [ ] URL 已版本化。
+- [ ] 响应封装严格符合规则。
+- [ ] 分页结构已标准化。
+- [ ] 错误码确定且不冲突。

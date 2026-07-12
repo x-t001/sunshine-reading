@@ -1,31 +1,29 @@
-﻿---
-description: Reading UI consistency, accessibility, and device behavior
+---
+description: 阅读界面一致性、可访问性与设备适配规则
 alwaysApply: true
 ---
 
-# 05 Reading UI Style Rule / 阅读 UI 风格规则
+# 05 阅读 UI 风格规则
 
-## Purpose / 目的
-- Ensure stable reading UX across reader, author, and admin surfaces.
-- 保证阅读端、作者端、管理端的一致体验。
+## 目的
+- 保证阅读端、作者端和管理端具有稳定且一致的用户体验。
 
-## Inputs / 输入
-- Screen type / 页面类型
-- Content density / 内容密度
-- Device target / 设备目标
+## 输入
+- 页面类型
+- 内容密度
+- 目标设备
 
-## Steps / 步骤
-1. Define typographic tokens (font size, line height, paragraph spacing) before page design. / 页面设计前先定义排版令牌。
-2. Keep interaction components consistent (button states, forms, dialogs, toasts). / 交互组件状态与行为必须一致。
-3. Reader pages must support chapter navigation, progress display, and night mode contrast. / 阅读页必须支持章节导航、进度展示、夜间模式对比度。
-4. Ensure keyboard focus order and semantic labels for critical actions. / 关键操作必须有键盘焦点顺序与语义标签。
-5. Define mobile-first layout breakpoints and fallback behavior. / 定义移动优先断点与降级行为。
+## 步骤
+1. 页面设计前先定义排版令牌，包括字号、行高和段落间距。
+2. 按钮状态、表单、对话框和提示消息等交互组件必须保持一致。
+3. 阅读页面必须支持章节导航、进度展示和夜间模式对比度。
+4. 关键操作必须提供正确的键盘焦点顺序与语义标签。
+5. 定义移动优先的布局断点与降级行为。
 
-## Output / 产出
-- A practical UI rulebook for reading product scenarios.
-- 面向阅读场景的可执行 UI 规则。
+## 产出
+- 面向阅读产品场景的可执行 UI 规则。
 
-## Checklist / 检查清单
-- [ ] Reading UX core elements are covered. / 阅读核心体验要素已覆盖。
-- [ ] Accessibility requirements are explicit. / 可访问性要求明确。
-- [ ] Responsive behavior is documented. / 响应式行为已文档化。
+## 检查清单
+- [ ] 已覆盖阅读核心体验要素。
+- [ ] 可访问性要求明确。
+- [ ] 响应式行为已文档化。

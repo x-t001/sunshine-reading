@@ -88,16 +88,22 @@ Tasks:
 
 1. Novel/story/article short-video generation RFC. First draft completed in `10-short-video-generation-rfc.md`.
 2. Storyboard project backend: project and scene models, create/list/detail APIs, owner/admin permissions. First backend pass completed for pasted text projects.
-3. AI storyboard generation: story analysis, 4-8 scene generation, job status, retry, provider usage logging.
-4. Chapter source integration: create from public approved chapters and author-owned drafts with backend access checks.
-5. Image, TTS, and subtitle asset generation.
-6. FFmpeg-based 9:16 MP4 render and download.
-7. Quota, moderation, storage cleanup, and admin troubleshooting views.
-8. Optional direct text-to-video provider evaluation after the storyboard/image/TTS/render path is stable.
+3. User-facing project pages: list/create/detail pages and visible navigation entry. First frontend pass completed for pasted text projects.
+4. Local story draft generation: create 500-3000 character story drafts from a short idea. First pass completed without external provider calls.
+5. Local storyboard generation: create 4-8 deterministic scene drafts from pasted/generated text. First pass completed without external provider calls.
+6. Storyboard scene editing: title, visual prompt, narration, subtitle, duration, camera direction, and mood. First pass completed with owner/admin checks and audit logging.
+7. Provider-backed AI story/storyboard generation: server-configured storyboard generation, durable database queue, polling, bounded retry, stale-job recovery, local fallback, and token audit completed; provider-backed story drafting remains open.
+8. Chapter source integration: public approved chapters, author-owned drafts, admin access, source snapshots, searchable frontend selection, and audit logging completed.
+9. Image, TTS, and subtitle asset generation.
+10. FFmpeg-based 9:16 MP4 render and download.
+11. Quota, moderation, storage cleanup, and admin troubleshooting views.
+12. Optional direct text-to-video provider evaluation after the storyboard/image/TTS/render path is stable.
 
 Exit criteria:
 
 - A user can create a private storyboard project from valid text or accessible chapter content.
+- A user can generate a story draft from a short idea and use it as project input.
+- A pasted-text project can generate reviewable scene drafts.
 - Provider secrets are configured server-side and never stored from user input.
 - Long-running jobs have visible queued/running/succeeded/failed states.
 - Admin can inspect failed or unsafe projects.
