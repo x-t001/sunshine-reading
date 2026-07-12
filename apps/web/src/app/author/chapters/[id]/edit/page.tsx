@@ -129,6 +129,9 @@ function EditAuthorChapterContent() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Link href="/video-projects/create" className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700">
+            制作短视频
+          </Link>
           <Link href={`/author/novels/${chapter.novel_id}/chapters`} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-700">
             返回章节列表
           </Link>

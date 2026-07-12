@@ -119,3 +119,11 @@ CORS_ALLOWED_ORIGINS = [item.strip() for item in cors_allow_origins.split(",") i
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://127.0.0.1:6379/0")
 CACHE_KEY_PREFIX = os.getenv("CACHE_KEY_PREFIX", "sunshine-reading")
+
+VIDEO_AI_API_URL = os.getenv("VIDEO_AI_API_URL", "").strip().rstrip("/")
+VIDEO_AI_API_KEY = os.getenv("VIDEO_AI_API_KEY", "").strip()
+VIDEO_AI_MODEL = os.getenv("VIDEO_AI_MODEL", "gpt-4o-mini").strip()
+VIDEO_AI_TIMEOUT_SECONDS = max(5, int(os.getenv("VIDEO_AI_TIMEOUT_SECONDS", "60")))
+VIDEO_JOB_MAX_ATTEMPTS = min(5, max(1, int(os.getenv("VIDEO_JOB_MAX_ATTEMPTS", "3"))))
+VIDEO_JOB_POLL_INTERVAL_SECONDS = max(1, int(os.getenv("VIDEO_JOB_POLL_INTERVAL_SECONDS", "2")))
+VIDEO_JOB_STALE_SECONDS = max(60, int(os.getenv("VIDEO_JOB_STALE_SECONDS", "300")))

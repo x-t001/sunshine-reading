@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import VideoProject, VideoScene
+from .models import VideoGenerationJob, VideoProject, VideoScene
 
 
 class VideoSceneInline(admin.TabularInline):
@@ -33,3 +33,12 @@ class VideoSceneAdmin(admin.ModelAdmin):
     search_fields = ("project__title", "title", "visual_prompt", "narration_text", "subtitle_text")
     ordering = ("project", "scene_no")
     readonly_fields = ("created_at", "updated_at")
+
+
+@admin.register(VideoGenerationJob)
+class VideoGenerationJobAdmin(admin.ModelAdmin):
+    list_display = ("id", "project", "job_type", "status", "attempt_count", "max_attempts", "model_name", "created_at")
+    list_filter = ("job_type", "status", "provider", "created_at")
+    search_fields = ("project__title", "project__owner__username", "model_name", "error_message")
+    ordering = ("-created_at",)
+    readonly_fields = ("created_at", "updated_at", "started_at", "finished_at")

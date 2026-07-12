@@ -78,6 +78,21 @@ export default async function HomePage() {
         </Link>
       </section>
 
+      <section className="rounded-xl bg-white p-4 shadow-sm">
+        <SectionTitle title="短视频创作" actionText="进入项目" actionHref="/video-projects" />
+        <p className="text-sm leading-6 text-zinc-600">
+          把小说片段、故事或文章先保存为 9:16 短视频草稿，自动拆成待生成的分镜占位。
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Link href="/video-projects/create" className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white">
+            新建短视频草稿
+          </Link>
+          <Link href="/video-projects" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700">
+            查看项目
+          </Link>
+        </div>
+      </section>
+
       <section>
         <SectionTitle title="最近更新" />
         {updates.results.length === 0 ? (

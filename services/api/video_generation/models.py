@@ -130,3 +130,68 @@ class VideoScene(TimeStampedModel):
 
     def __str__(self):
         return f"{self.project_id} #{self.scene_no} {self.title}".strip()
+
+
+class VideoGenerationJob(TimeStampedModel):
+    class JobType(models.TextChoices):
+        AI_STORYBOARD = "ai_storyboard", "AI storyboard"
+
+    class Status(models.TextChoices):
+        QUEUED = "queued", "Queued"
+        RUNNING = "running", "Running"
+        SUCCEEDED = "succeeded", "Succeeded"
+        FAILED = "failed", "Failed"
+        CANCELED = "canceled", "Canceled"
+
+    project = models.ForeignKey(
+        VideoProject,
+        verbose_name="Video project",
+        related_name="generation_jobs",
+        on_delete=models.CASCADE,
+    )
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="Requested by",
+        related_name="video_generation_jobs",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+    )
+    job_type = models.CharField("Job type", max_length=30, choices=JobType.choices, default=JobType.AI_STORYBOARD, db_index=True)
+    status = models.CharField("Status", max_length=20, choices=Status.choices, default=Status.QUEUED, db_index=True)
+    provider = models.CharField("Provider", max_length=50, default="openai_compatible")
+    model_name = models.CharField("Model name", max_length=120, blank=True)
+    request_payload = models.JSONField("Request payload", default=dict, blank=True)
+    attempt_count = models.PositiveSmallIntegerField("Attempt count", default=0)
+    max_attempts = models.PositiveSmallIntegerField("Max attempts", default=3)
+    error_message = models.TextField("Error message", blank=True)
+    started_at = models.DateTimeField("Started at", null=True, blank=True)
+    finished_at = models.DateTimeField("Finished at", null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Video generation job"
+        verbose_name_plural = "Video generation jobs"
+        ordering = ["-created_at", "-id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(max_attempts__gte=1) & models.Q(max_attempts__lte=5),
+                name="video_job_max_attempts_range",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(attempt_count__lte=models.F("max_attempts")),
+                name="video_job_attempt_within_limit",
+            ),
+            models.UniqueConstraint(
+                fields=["project", "job_type"],
+                condition=models.Q(status__in=("queued", "running")),
+                name="unique_active_video_job_per_project_type",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["status", "created_at"]),
+            models.Index(fields=["project", "status"]),
+            models.Index(fields=["job_type", "status", "created_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.get_job_type_display()} #{self.id} ({self.status})"

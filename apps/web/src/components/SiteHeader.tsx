@@ -135,6 +135,7 @@ export function SiteHeader() {
           <Link href="/categories">分类</Link>
           <Link href="/rankings">榜单</Link>
           <Link href="/search">搜索</Link>
+          <Link href="/video-projects">短视频</Link>
           <Link href="/bookshelf">书架</Link>
           <Link href="/history">历史</Link>
           {canAccessAuthorCenter ? <Link href="/author">作者中心</Link> : null}

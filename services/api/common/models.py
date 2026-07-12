@@ -21,6 +21,7 @@ class AuditLog(models.Model):
         RANKING_ITEM = "ranking_item", "\u699c\u5355\u6761\u76ee"
         VIDEO_PROJECT = "video_project", "Video project"
         VIDEO_SCENE = "video_scene", "Video scene"
+        VIDEO_JOB = "video_job", "Video generation job"
 
     class Action(models.TextChoices):
         SUBMIT = "submit", "\u63d0\u4ea4\u5ba1\u6838"

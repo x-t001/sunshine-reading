@@ -411,6 +411,13 @@ export default function ReadingPage() {
           )}
         </div>
 
+        <Link
+          href="/video-projects/create"
+          className={settings.nightMode ? "mt-3 block rounded-lg border border-emerald-700 px-3 py-2 text-center text-sm text-emerald-300" : "mt-3 block rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-center text-sm font-medium text-emerald-700"}
+        >
+          从章节制作短视频
+        </Link>
+
         <ReadingToolbar
           fontSize={settings.fontSize}
           nightMode={settings.nightMode}
