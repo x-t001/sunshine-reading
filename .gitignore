@@ -26,5 +26,6 @@ node_modules/
 dist/
 out/
 
-# Local startup helpers
-.tmp-start-*.cmd
+# Local generated artifacts
+.tmp-*
+.codex-remote-attachments/
