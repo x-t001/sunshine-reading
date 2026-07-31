@@ -30,3 +30,7 @@ out/
 # Local generated artifacts
 .tmp-*
 .codex-remote-attachments/
+
+# Local backups
+local-backups/
+*.dump
