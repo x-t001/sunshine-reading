@@ -88,7 +88,7 @@ export default function VideoProjectsPage() {
       <div className="flex flex-col gap-3 rounded-lg bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-lg font-semibold text-zinc-900">短视频项目</h1>
-          <p className="mt-1 text-sm text-zinc-500">当前支持从一段故事或文章文本创建 9:16 短视频草稿。</p>
+          <p className="mt-1 text-sm text-zinc-500">从故事文本、单个章节或小说章节范围创建 9:16 短视频草稿。</p>
         </div>
         <Link href="/video-projects/create" className="inline-flex justify-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white">
           新建项目
@@ -118,6 +118,7 @@ export default function VideoProjectsPage() {
                 <p className="mt-2 text-sm text-zinc-500">
                   {item.aspect_ratio} · {item.duration_target} 秒 · {item.scene_count} 个分镜
                 </p>
+                {item.source_title ? <p className="mt-1 line-clamp-1 text-xs text-zinc-500">来源：{item.source_title}</p> : null}
                 <p className="mt-1 text-xs text-zinc-400">更新于 {formatDateLabel(item.updated_at)}</p>
               </div>
               <span className={`w-fit rounded-full px-3 py-1 text-xs font-medium ${statusClass(item.status)}`}>

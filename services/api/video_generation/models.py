@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
@@ -60,6 +61,7 @@ class VideoProject(TimeStampedModel):
     aspect_ratio = models.CharField("Aspect ratio", max_length=20, default="9:16")
     status = models.CharField("Status", max_length=30, choices=Status.choices, default=Status.DRAFT, db_index=True)
     failure_reason = models.TextField("Failure reason", blank=True)
+    agent_workflow = models.JSONField("Agent workflow", default=dict, blank=True)
     deleted_at = models.DateTimeField("Deleted at", null=True, blank=True, db_index=True)
 
     class Meta:
@@ -112,6 +114,7 @@ class VideoScene(TimeStampedModel):
     duration_seconds = models.PositiveSmallIntegerField("Duration seconds", default=8)
     camera_direction = models.CharField("Camera direction", max_length=200, blank=True)
     mood = models.CharField("Mood", max_length=100, blank=True)
+    agent_metadata = models.JSONField("Agent metadata", default=dict, blank=True)
     status = models.CharField("Status", max_length=20, choices=Status.choices, default=Status.DRAFT, db_index=True)
     failure_reason = models.TextField("Failure reason", blank=True)
 
@@ -132,9 +135,101 @@ class VideoScene(TimeStampedModel):
         return f"{self.project_id} #{self.scene_no} {self.title}".strip()
 
 
+class VideoAsset(TimeStampedModel):
+    class AssetType(models.TextChoices):
+        IMAGE = "image", "Image"
+        VIDEO = "video", "Video"
+        AUDIO = "audio", "Audio"
+        SUBTITLE = "subtitle", "Subtitle"
+        FINAL_VIDEO = "final_video", "Final video"
+
+    class Status(models.TextChoices):
+        QUEUED = "queued", "Queued"
+        RUNNING = "running", "Running"
+        READY = "ready", "Ready"
+        STALE = "stale", "Stale"
+        FAILED = "failed", "Failed"
+
+    project = models.ForeignKey(
+        VideoProject,
+        verbose_name="Video project",
+        related_name="assets",
+        on_delete=models.CASCADE,
+    )
+    scene = models.ForeignKey(
+        VideoScene,
+        verbose_name="Video scene",
+        related_name="assets",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+    )
+    asset_type = models.CharField("Asset type", max_length=20, choices=AssetType.choices, db_index=True)
+    status = models.CharField("Status", max_length=20, choices=Status.choices, default=Status.QUEUED, db_index=True)
+    storage_path = models.CharField("Storage path", max_length=500, blank=True)
+    file_name = models.CharField("File name", max_length=255, blank=True)
+    mime_type = models.CharField("MIME type", max_length=100, blank=True)
+    file_size = models.PositiveBigIntegerField("File size", default=0)
+    provider = models.CharField("Provider", max_length=50, blank=True)
+    provider_asset_id = models.CharField("Provider asset ID", max_length=255, blank=True)
+    metadata = models.JSONField("Metadata", default=dict, blank=True)
+    failure_reason = models.TextField("Failure reason", blank=True)
+
+    class Meta:
+        verbose_name = "Video asset"
+        verbose_name_plural = "Video assets"
+        ordering = ["project_id", "asset_type", "scene_id", "id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    models.Q(asset_type__in=("subtitle", "final_video"), scene__isnull=True)
+                    | models.Q(asset_type__in=("image", "video", "audio"), scene__isnull=False)
+                ),
+                name="video_asset_scope_matches_type",
+            ),
+            models.UniqueConstraint(
+                fields=["project", "scene", "asset_type"],
+                condition=models.Q(scene__isnull=False),
+                name="unique_video_scene_asset_type",
+            ),
+            models.UniqueConstraint(
+                fields=["project", "asset_type"],
+                condition=models.Q(scene__isnull=True),
+                name="unique_video_project_asset_type",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["project", "asset_type", "status"]),
+            models.Index(fields=["scene", "asset_type"]),
+        ]
+
+    def __str__(self):
+        scope = f"scene {self.scene_id}" if self.scene_id else "project"
+        return f"{self.project_id} {scope} {self.asset_type} ({self.status})"
+
+    def clean(self):
+        super().clean()
+        if self.scene_id and self.project_id and self.scene.project_id != self.project_id:
+            raise ValidationError({"scene": "Video asset scene must belong to the same project."})
+
+
 class VideoGenerationJob(TimeStampedModel):
+    RESUMABLE_PROVIDER_ERROR_MARKERS = (
+        "等待超时",
+        "异步结果查询已达到等待上限",
+        "结果查询服务连接超时",
+        "无法连接短视频画面结果查询服务",
+        "短视频画面文件下载超时",
+        "无法连接短视频画面文件下载服务",
+        "短视频画面文件下载失败，HTTP 5",
+    )
+
     class JobType(models.TextChoices):
         AI_STORYBOARD = "ai_storyboard", "AI storyboard"
+        IMAGE_ASSETS = "image_assets", "Image assets"
+        VIDEO_CLIPS = "video_clips", "Video clips"
+        NARRATION_AUDIO = "narration_audio", "Narration audio"
+        RENDER = "render", "Render"
 
     class Status(models.TextChoices):
         QUEUED = "queued", "Queued"
@@ -167,6 +262,16 @@ class VideoGenerationJob(TimeStampedModel):
     error_message = models.TextField("Error message", blank=True)
     started_at = models.DateTimeField("Started at", null=True, blank=True)
     finished_at = models.DateTimeField("Finished at", null=True, blank=True)
+
+    @property
+    def can_resume_provider_task(self):
+        payload = self.request_payload if isinstance(self.request_payload, dict) else {}
+        return (
+            self.job_type == self.JobType.VIDEO_CLIPS
+            and self.status == self.Status.FAILED
+            and payload.get("provider_resume_available") is True
+            and any(marker in (self.error_message or "") for marker in self.RESUMABLE_PROVIDER_ERROR_MARKERS)
+        )
 
     class Meta:
         verbose_name = "Video generation job"

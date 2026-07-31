@@ -19,6 +19,7 @@ services/api/.venv/
 # Django
 db.sqlite3
 *.sqlite3
+media/
 
 # Node
 node_modules/

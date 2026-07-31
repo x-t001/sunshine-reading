@@ -89,6 +89,7 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
+MEDIA_ROOT = PROJECT_ROOT / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "users.User"
 
@@ -124,6 +125,102 @@ VIDEO_AI_API_URL = os.getenv("VIDEO_AI_API_URL", "").strip().rstrip("/")
 VIDEO_AI_API_KEY = os.getenv("VIDEO_AI_API_KEY", "").strip()
 VIDEO_AI_MODEL = os.getenv("VIDEO_AI_MODEL", "gpt-4o-mini").strip()
 VIDEO_AI_TIMEOUT_SECONDS = max(5, int(os.getenv("VIDEO_AI_TIMEOUT_SECONDS", "60")))
+VIDEO_AI_PLANNING_TIMEOUT_SECONDS = max(
+    VIDEO_AI_TIMEOUT_SECONDS,
+    int(os.getenv("VIDEO_AI_PLANNING_TIMEOUT_SECONDS", "180")),
+)
+VIDEO_AI_DIRECTING_TIMEOUT_SECONDS = max(
+    VIDEO_AI_TIMEOUT_SECONDS,
+    int(os.getenv("VIDEO_AI_DIRECTING_TIMEOUT_SECONDS", "180")),
+)
+VIDEO_AI_THINKING_TYPE = os.getenv("VIDEO_AI_THINKING_TYPE", "").strip().lower()
+if VIDEO_AI_THINKING_TYPE not in ("", "enabled", "disabled"):
+    VIDEO_AI_THINKING_TYPE = ""
+VIDEO_IMAGE_API_URL = os.getenv(
+    "VIDEO_IMAGE_API_URL",
+    "https://open.bigmodel.cn/api/paas/v4/images/generations",
+).strip()
+VIDEO_IMAGE_API_KEY = os.getenv("VIDEO_IMAGE_API_KEY", VIDEO_AI_API_KEY).strip()
+VIDEO_IMAGE_MODEL = os.getenv("VIDEO_IMAGE_MODEL", "glm-image").strip()
+VIDEO_IMAGE_SIZE = os.getenv("VIDEO_IMAGE_SIZE", "960x1728").strip()
+VIDEO_IMAGE_TIMEOUT_SECONDS = max(10, int(os.getenv("VIDEO_IMAGE_TIMEOUT_SECONDS", "90")))
+VIDEO_IMAGE_DAILY_JOB_LIMIT = max(1, int(os.getenv("VIDEO_IMAGE_DAILY_JOB_LIMIT", "3")))
+VIDEO_CLIP_API_URL = os.getenv(
+    "VIDEO_CLIP_API_URL",
+    "https://open.bigmodel.cn/api/paas/v4/videos/generations",
+).strip()
+VIDEO_CLIP_RESULT_API_URL = os.getenv(
+    "VIDEO_CLIP_RESULT_API_URL",
+    "https://open.bigmodel.cn/api/paas/v4/async-result/{task_id}",
+).strip()
+VIDEO_CLIP_API_KEY = os.getenv("VIDEO_CLIP_API_KEY", VIDEO_AI_API_KEY).strip()
+VIDEO_CLIP_MODEL = os.getenv("VIDEO_CLIP_MODEL", "cogvideox-flash").strip()
+VIDEO_CLIP_SIZE = os.getenv("VIDEO_CLIP_SIZE", "1080x1920").strip()
+VIDEO_CLIP_DURATION_SECONDS = 10 if int(os.getenv("VIDEO_CLIP_DURATION_SECONDS", "5")) == 10 else 5
+VIDEO_CLIP_FPS = 60 if int(os.getenv("VIDEO_CLIP_FPS", "30")) == 60 else 30
+VIDEO_CLIP_WITH_AUDIO = os.getenv("VIDEO_CLIP_WITH_AUDIO", "false").lower() == "true"
+VIDEO_CLIP_USE_SCENE_IMAGE = os.getenv("VIDEO_CLIP_USE_SCENE_IMAGE", "true").lower() == "true"
+VIDEO_CLIP_USE_PREVIOUS_TAIL_FRAME = (
+    os.getenv("VIDEO_CLIP_USE_PREVIOUS_TAIL_FRAME", "true").lower() == "true"
+)
+VIDEO_CLIP_REFERENCE_IMAGE_MAX_FILE_BYTES = min(
+    5 * 1024 * 1024,
+    max(256 * 1024, int(os.getenv("VIDEO_CLIP_REFERENCE_IMAGE_MAX_FILE_BYTES", str(5 * 1024 * 1024)))),
+)
+VIDEO_CLIP_TAIL_FRAME_TIMEOUT_SECONDS = max(
+    5,
+    int(os.getenv("VIDEO_CLIP_TAIL_FRAME_TIMEOUT_SECONDS", "30")),
+)
+VIDEO_CLIP_REQUEST_TIMEOUT_SECONDS = max(10, int(os.getenv("VIDEO_CLIP_REQUEST_TIMEOUT_SECONDS", "30")))
+VIDEO_CLIP_POLL_INTERVAL_SECONDS = max(1, int(os.getenv("VIDEO_CLIP_POLL_INTERVAL_SECONDS", "5")))
+VIDEO_CLIP_MAX_WAIT_SECONDS = max(30, int(os.getenv("VIDEO_CLIP_MAX_WAIT_SECONDS", "900")))
+VIDEO_CLIP_MAX_FILE_BYTES = min(
+    200 * 1024 * 1024,
+    max(1024 * 1024, int(os.getenv("VIDEO_CLIP_MAX_FILE_BYTES", str(100 * 1024 * 1024)))),
+)
+VIDEO_CLIP_DAILY_JOB_LIMIT = max(1, int(os.getenv("VIDEO_CLIP_DAILY_JOB_LIMIT", "1")))
+VIDEO_VISUAL_REGENERATION_DAILY_SCENE_LIMIT = max(
+    1,
+    int(os.getenv("VIDEO_VISUAL_REGENERATION_DAILY_SCENE_LIMIT", "6")),
+)
+VIDEO_VISUAL_REGENERATION_PER_SCENE_LIMIT = max(
+    1,
+    int(os.getenv("VIDEO_VISUAL_REGENERATION_PER_SCENE_LIMIT", "2")),
+)
+VIDEO_TTS_API_URL = os.getenv(
+    "VIDEO_TTS_API_URL",
+    "https://open.bigmodel.cn/api/paas/v4/audio/speech",
+).strip()
+VIDEO_TTS_API_KEY = os.getenv("VIDEO_TTS_API_KEY", VIDEO_AI_API_KEY).strip()
+VIDEO_TTS_MODEL = os.getenv("VIDEO_TTS_MODEL", "glm-tts").strip()
+VIDEO_TTS_VOICE = os.getenv("VIDEO_TTS_VOICE", "tongtong").strip()
+VIDEO_TTS_SPEED = min(2.0, max(0.5, float(os.getenv("VIDEO_TTS_SPEED", "1.0"))))
+VIDEO_TTS_VOLUME = min(10.0, max(0.1, float(os.getenv("VIDEO_TTS_VOLUME", "1.0"))))
+VIDEO_TTS_TIMEOUT_SECONDS = max(10, int(os.getenv("VIDEO_TTS_TIMEOUT_SECONDS", "90")))
+VIDEO_TTS_DAILY_JOB_LIMIT = max(1, int(os.getenv("VIDEO_TTS_DAILY_JOB_LIMIT", "5")))
+VIDEO_ASR_ENABLED = os.getenv("VIDEO_ASR_ENABLED", "false").lower() == "true"
+VIDEO_ASR_API_URL = os.getenv(
+    "VIDEO_ASR_API_URL",
+    "https://open.bigmodel.cn/api/paas/v4/audio/transcriptions",
+).strip()
+VIDEO_ASR_API_KEY = os.getenv("VIDEO_ASR_API_KEY", VIDEO_TTS_API_KEY).strip()
+VIDEO_ASR_MODEL = os.getenv("VIDEO_ASR_MODEL", "glm-asr-2512").strip()
+VIDEO_ASR_TIMEOUT_SECONDS = max(10, int(os.getenv("VIDEO_ASR_TIMEOUT_SECONDS", "60")))
+VIDEO_ASR_MIN_SIMILARITY = min(1.0, max(0.5, float(os.getenv("VIDEO_ASR_MIN_SIMILARITY", "0.75"))))
+VIDEO_ASSET_MAX_FILE_BYTES = min(
+    100 * 1024 * 1024,
+    max(1024 * 1024, int(os.getenv("VIDEO_ASSET_MAX_FILE_BYTES", str(25 * 1024 * 1024)))),
+)
+VIDEO_RENDER_ENABLED = os.getenv("VIDEO_RENDER_ENABLED", "true").lower() == "true"
+VIDEO_RENDER_WIDTH = min(2160, max(360, int(os.getenv("VIDEO_RENDER_WIDTH", "720"))))
+VIDEO_RENDER_HEIGHT = min(3840, max(640, int(os.getenv("VIDEO_RENDER_HEIGHT", "1280"))))
+VIDEO_RENDER_FPS = min(60, max(24, int(os.getenv("VIDEO_RENDER_FPS", "30"))))
+VIDEO_RENDER_CRF = min(30, max(16, int(os.getenv("VIDEO_RENDER_CRF", "21"))))
+VIDEO_RENDER_TIMEOUT_SECONDS = max(60, int(os.getenv("VIDEO_RENDER_TIMEOUT_SECONDS", "600")))
+VIDEO_RENDER_MAX_FILE_BYTES = min(
+    1024 * 1024 * 1024,
+    max(10 * 1024 * 1024, int(os.getenv("VIDEO_RENDER_MAX_FILE_BYTES", str(500 * 1024 * 1024)))),
+)
 VIDEO_JOB_MAX_ATTEMPTS = min(5, max(1, int(os.getenv("VIDEO_JOB_MAX_ATTEMPTS", "3"))))
 VIDEO_JOB_POLL_INTERVAL_SECONDS = max(1, int(os.getenv("VIDEO_JOB_POLL_INTERVAL_SECONDS", "2")))
 VIDEO_JOB_STALE_SECONDS = max(60, int(os.getenv("VIDEO_JOB_STALE_SECONDS", "300")))

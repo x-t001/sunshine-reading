@@ -6,10 +6,11 @@ import type { UpdateVideoScenePayload, VideoScene } from "@/types/video-project"
 type VideoSceneEditorProps = {
   scene: VideoScene;
   saving: boolean;
+  disabled?: boolean;
   onSave: (sceneId: number, payload: UpdateVideoScenePayload) => Promise<void>;
 };
 
-export default function VideoSceneEditor({ scene, saving, onSave }: VideoSceneEditorProps) {
+export default function VideoSceneEditor({ scene, saving, disabled = false, onSave }: VideoSceneEditorProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<UpdateVideoScenePayload>({});
 
@@ -28,6 +29,9 @@ export default function VideoSceneEditor({ scene, saving, onSave }: VideoSceneEd
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (disabled) {
+      return;
+    }
     try {
       await onSave(scene.id, draft);
       setEditing(false);
@@ -49,8 +53,10 @@ export default function VideoSceneEditor({ scene, saving, onSave }: VideoSceneEd
             </p>
           </div>
           <button
-            className="self-start rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
+            className="self-start rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:text-zinc-400"
             type="button"
+            disabled={disabled}
+            title={disabled ? "素材任务运行期间暂不能编辑分镜" : undefined}
             onClick={startEditing}
           >
             编辑分镜
@@ -152,9 +158,9 @@ export default function VideoSceneEditor({ scene, saving, onSave }: VideoSceneEd
         <button
           className="rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white disabled:bg-zinc-300"
           type="submit"
-          disabled={saving}
+          disabled={saving || disabled}
         >
-          {saving ? "保存中..." : "保存分镜"}
+          {saving ? "保存中..." : disabled ? "素材任务运行中" : "保存分镜"}
         </button>
       </div>
     </form>

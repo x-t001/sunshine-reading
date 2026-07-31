@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import VideoGenerationJob, VideoProject, VideoScene
+from .models import VideoAsset, VideoGenerationJob, VideoProject, VideoScene
 
 
 class VideoSceneInline(admin.TabularInline):
@@ -10,18 +10,26 @@ class VideoSceneInline(admin.TabularInline):
     readonly_fields = ("created_at", "updated_at")
 
 
+class VideoAssetInline(admin.TabularInline):
+    model = VideoAsset
+    extra = 0
+    fields = ("asset_type", "scene", "status", "file_name", "file_size", "provider")
+    readonly_fields = ("created_at", "updated_at")
+
+
 @admin.register(VideoProject)
 class VideoProjectAdmin(admin.ModelAdmin):
     list_display = ("title", "owner", "source_type", "status", "duration_target", "aspect_ratio", "created_at")
     list_filter = ("source_type", "status", "aspect_ratio", "created_at")
     search_fields = ("title", "source_title", "owner__username", "owner__nickname")
     ordering = ("-created_at",)
-    readonly_fields = ("created_at", "updated_at", "deleted_at", "source_excerpt_hash")
-    inlines = (VideoSceneInline,)
+    readonly_fields = ("created_at", "updated_at", "deleted_at", "source_excerpt_hash", "agent_workflow")
+    inlines = (VideoSceneInline, VideoAssetInline)
     fieldsets = (
         ("Project", {"fields": ("owner", "title", "summary", "style_preset", "duration_target", "aspect_ratio")}),
         ("Source", {"fields": ("source_type", "source_novel", "source_chapter", "source_title", "source_excerpt_hash", "input_text")}),
         ("Status", {"fields": ("status", "failure_reason", "deleted_at")}),
+        ("Agent workflow", {"fields": ("agent_workflow",)}),
         ("Time", {"fields": ("created_at", "updated_at")}),
     )
 
@@ -32,7 +40,16 @@ class VideoSceneAdmin(admin.ModelAdmin):
     list_filter = ("status", "created_at")
     search_fields = ("project__title", "title", "visual_prompt", "narration_text", "subtitle_text")
     ordering = ("project", "scene_no")
-    readonly_fields = ("created_at", "updated_at")
+    readonly_fields = ("created_at", "updated_at", "agent_metadata")
+
+
+@admin.register(VideoAsset)
+class VideoAssetAdmin(admin.ModelAdmin):
+    list_display = ("id", "project", "scene", "asset_type", "status", "file_name", "file_size", "created_at")
+    list_filter = ("asset_type", "status", "provider", "created_at")
+    search_fields = ("project__title", "project__owner__username", "file_name", "provider_asset_id")
+    ordering = ("-created_at",)
+    readonly_fields = ("created_at", "updated_at", "storage_path", "file_size")
 
 
 @admin.register(VideoGenerationJob)
